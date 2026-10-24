@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy – Selva Sync</title>
+<meta name="description" content="Privacy policy of Selva Sync: it only accesses the Google Drive files it creates and stores nothing on any server.">
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./"><img src="icon.png" alt="">Selva Sync</a>
+    <nav class="links"><a href="./">Home</a><a href="privacy.html">Privacy policy</a><a href="terms.html">Terms</a></nav>
+  </div>
+</header>
+
+<main class="doc">
+  <h1>Privacy Policy</h1>
+  <p class="meta">Selva Sync · Effective date: 25 October 2026</p>
+
+  <div class="box">
+    <b>In short:</b> Selva Sync runs only on your computer. It sends your chosen files straight from your computer to <b>your own Google Drive</b>. It can only access the Drive files and folders it created itself. It has no servers, collects nothing about you, and shares nothing with anyone.
+  </div>
+
+  <p>Selva Sync ("the app") is a free, open-source Windows application created by Dr. Selvakumar Vellingiri ("we", "us"). This policy explains what information the app uses and how. It applies to the app downloaded from its official source code repository and its releases.</p>
+
+  <h2>1. Information the app accesses from your Google account</h2>
+  <p>When you click <b>Connect Google Drive</b>, Google asks you to allow the app one permission:</p>
+  <ul>
+    <li><b>Google Drive, per-file access</b> (<code>https://www.googleapis.com/auth/drive.file</code>). The app can see, create, change and delete <b>only the files and folders it created itself</b> in your Google Drive. It cannot see, open or list any other file in your Drive.</li>
+  </ul>
+  <p>Through this connection the app also reads your Google account's <b>email address and display name</b>, so it can show you which account is connected, and your <b>Drive storage usage and limit</b>, so it can warn you before your Drive is full. This information is only shown inside the app on your computer.</p>
+
+  <h2>2. How the app uses this information</h2>
+  <ul>
+    <li>To upload the files and folders <b>you select</b> from your computer to a "Selva Sync" folder in your own Google Drive, and to keep that copy up to date.</li>
+    <li>To move files you delete on your computer into an archive folder in your Drive, and to remove archived files after the number of days you choose.</li>
+    <li>To show your connected account, storage usage and sync status in the app.</li>
+  </ul>
+  <p>The app does not use your data for advertising or profiling, does not sell it, and does not use it to train any artificial-intelligence or machine-learning model.</p>
+
+  <h2>3. What is stored, and where</h2>
+  <p>We operate <b>no servers</b>. Nothing is ever sent to us. Your files go only from your computer to Google's servers, as part of your own Google Drive.</p>
+  <p>The app keeps a few small files on your computer only, in your Windows user folder (<code>%APPDATA%\SelvaSync</code>):</p>
+  <table>
+    <tr><th>What</th><th>Why</th></tr>
+    <tr><td>Your Google sign-in token, encrypted with Windows (DPAPI)</td><td>So the app can keep syncing without asking you to sign in every time. Only your Windows user on that computer can decrypt it.</td></tr>
+    <tr><td>Your settings (chosen folders, schedule, limits, language)</td><td>To remember your choices.</td></tr>
+    <tr><td>A list of files already uploaded (path, size, date, Drive file ID)</td><td>So unchanged files are never uploaded twice.</td></tr>
+    <tr><td>Activity logs</td><td>So you can see what was uploaded and when. Logs older than about a year are deleted automatically.</td></tr>
+    <tr><td>A random installation ID</td><td>To tell your computers apart on Drive when several PCs use one Google account.</td></tr>
+  </table>
+
+  <h2>4. Sharing</h2>
+  <p>We do not share, sell, rent or transfer your information to anyone. The only external service the app talks to is Google (sign-in and Google Drive), and only on your behalf. The app contains no analytics, tracking, advertising or crash-reporting code.</p>
+
+  <h2>5. Google API Services User Data Policy</h2>
+  <p>Selva Sync's use and transfer of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy" rel="noopener">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
+
+  <h2>6. Security</h2>
+  <ul>
+    <li>All communication with Google uses encrypted HTTPS connections.</li>
+    <li>Your sign-in token is encrypted on your computer with Windows data protection.</li>
+    <li>The app's window is a local page available only on your own computer (127.0.0.1), protected by a random session key.</li>
+    <li>The full source code is public, so anyone can check what the app does.</li>
+  </ul>
+
+  <h2>7. Your choices, and deleting your data</h2>
+  <ul>
+    <li><b>Disconnect:</b> in the app, choose <i>Settings › Sign out</i>. This revokes the app's access at Google and deletes the sign-in token from your computer. You can also remove access at any time at <a href="https://myaccount.google.com/permissions" rel="noopener">myaccount.google.com/permissions</a>.</li>
+    <li><b>Delete local data:</b> uninstall the app and tick "Also delete settings, logs and sign-in from this computer".</li>
+    <li><b>Files in your Drive</b> belong to you. They stay in your Google Drive until you delete them there. Uninstalling the app does not delete them.</li>
+  </ul>
+
+  <h2>8. Children</h2>
+  <p>The app is a general backup tool and is not directed at children. It does not knowingly collect any information from anyone, including children.</p>
+
+  <h2>9. Changes to this policy</h2>
+  <p>If this policy changes, the updated version will be published on this page with a new effective date. Because the app collects nothing about you, changes will only describe how the app works on your computer.</p>
+
+  <h2>10. Contact</h2>
+  <p>Questions about this policy or the app: contact Dr. Selvakumar Vellingiri on <a href="https://www.linkedin.com/in/selvakumar-vellingiri-phd-97744572/" rel="noopener">LinkedIn</a>, or open an issue in the app's <a class="repo-link" href="#">source code repository</a>.</p>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Dr. Selvakumar Vellingiri · Selva Sync</span>
+    <span><a href="./">Home</a> · <a href="terms.html">Terms</a></span>
+  </div>
+</footer>
+<script src="site.js"></script>
+</body>
+</html>
