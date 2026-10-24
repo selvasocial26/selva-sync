@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="{{LANG}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="selva-token" content="{{TOKEN}}">
+<meta name="selva-version" content="{{VERSION}}">
+<title>Selva Sync</title>
+<link rel="icon" href="/static/icon.png">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <img src="/static/icon.png" alt="" width="36" height="36">
+      <div><div class="brand-name">Selva Sync</div><div class="brand-sub" data-i18n="tagline_short"></div></div>
+    </div>
+    <nav id="nav">
+      <button data-page="home"><span class="ic">⌂</span><span data-i18n="nav_home"></span></button>
+      <button data-page="folders"><span class="ic">▤</span><span data-i18n="nav_folders"></span></button>
+      <button data-page="schedule"><span class="ic">◷</span><span data-i18n="nav_schedule"></span></button>
+      <button data-page="internet"><span class="ic">⇅</span><span data-i18n="nav_internet"></span></button>
+      <button data-page="safety"><span class="ic">⛨</span><span data-i18n="nav_safety"></span></button>
+      <button data-page="activity"><span class="ic">≡</span><span data-i18n="nav_activity"></span></button>
+      <button data-page="settings"><span class="ic">⚙</span><span data-i18n="nav_settings"></span></button>
+      <button data-page="about"><span class="ic">ⓘ</span><span data-i18n="nav_about"></span></button>
+    </nav>
+    <div class="lang-box">
+      <label for="langPick" class="lang-label">🌐 <span data-i18n="language"></span></label>
+      <select id="langPick"></select>
+    </div>
+  </aside>
+
+  <main id="main">
+    <div class="offline-bar hidden" id="offlineBar" data-i18n="err_offline"></div>
+    <!-- HOME -->
+    <section class="page" id="page-home">
+      <div id="setupNotice"></div>
+      <div class="card status-card" id="statusCard">
+        <div class="status-head">
+          <div class="status-dot" id="statusDot"></div>
+          <div class="status-text">
+            <h1 id="statusTitle"></h1>
+            <p id="statusSub" class="muted"></p>
+          </div>
+        </div>
+        <div id="progressBox" class="progress-box hidden">
+          <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+          <div class="progress-meta"><span id="progFiles"></span><span id="progBytes"></span><span id="progSpeed"></span></div>
+          <div class="current" id="progCurrent"></div>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="btnSync" data-i18n="btn_sync_now"></button>
+          <button class="btn" id="btnPreview" data-i18n="btn_preview"></button>
+          <button class="btn hidden" id="btnForce" data-i18n="btn_sync_anyway"></button>
+          <button class="btn danger hidden" id="btnStop" data-i18n="btn_stop"></button>
+        </div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div class="tile-label" data-i18n="tile_last"></div><div class="tile-value" id="tileLast">—</div><div class="tile-sub" id="tileLastSub"></div></div>
+        <div class="tile"><div class="tile-label" data-i18n="tile_next"></div><div class="tile-value" id="tileNext">—</div><div class="tile-sub" id="tileNextSub"></div></div>
+        <div class="tile"><div class="tile-label" data-i18n="tile_data"></div><div class="tile-value" id="tileData">—</div><div class="tile-sub" id="tileDataSub"></div></div>
+        <div class="tile"><div class="tile-label" data-i18n="tile_drive"></div><div class="tile-value" id="tileDrive">—</div><div class="mini-bar"><div id="driveBar"></div></div><div class="tile-sub" id="tileDriveSub"></div></div>
+      </div>
+      <div class="card account-card" id="accountCard"></div>
+    </section>
+
+    <!-- FOLDERS -->
+    <section class="page" id="page-folders">
+      <h2 data-i18n="folders_title"></h2>
+      <p class="muted" data-i18n="folders_intro"></p>
+      <div class="card">
+        <div id="sourceList" class="source-list"></div>
+        <div class="actions"><button class="btn primary" id="btnAddFolder" data-i18n="btn_add_folder"></button></div>
+      </div>
+      <div class="card">
+        <h3 data-i18n="exclude_title"></h3>
+        <p class="muted" data-i18n="exclude_intro"></p>
+        <textarea id="excludes" rows="7" spellcheck="false"></textarea>
+        <div class="row-actions"><button class="btn small" id="btnResetEx" data-i18n="btn_reset_defaults"></button></div>
+        <div class="field">
+          <label for="maxSize" data-i18n="max_size"></label>
+          <div class="inline"><input type="number" id="maxSize" min="0" step="1" data-set="maxFileSizeMB" data-type="int"><span>MB</span></div>
+          <div class="hint" data-i18n="zero_no_limit"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCHEDULE -->
+    <section class="page" id="page-schedule">
+      <h2 data-i18n="schedule_title"></h2>
+      <p class="muted" data-i18n="schedule_intro"></p>
+      <div class="card">
+        <div class="choices">
+          <label class="choice"><input type="radio" name="smode" value="manual" data-set="schedule.mode"><div><b data-i18n="sched_manual"></b><span data-i18n="sched_manual_d"></span></div></label>
+          <label class="choice"><input type="radio" name="smode" value="interval" data-set="schedule.mode"><div><b data-i18n="sched_interval"></b><span class="inline"><span data-i18n="sched_every"></span><input type="number" min="1" max="168" data-set="schedule.everyHours" data-type="int" class="w70"><span data-i18n="hours"></span></span></div></label>
+          <label class="choice"><input type="radio" name="smode" value="daily" data-set="schedule.mode"><div><b data-i18n="sched_daily"></b><span class="inline"><span data-i18n="sched_at"></span><input type="time" data-set="schedule.time"></span></div></label>
+          <label class="choice"><input type="radio" name="smode" value="weekly" data-set="schedule.mode"><div><b data-i18n="sched_weekly"></b><span class="inline"><select data-set="schedule.weekday" data-type="int" id="weekdaySel"></select><span data-i18n="sched_at"></span><input type="time" data-set="schedule.time"></span></div></label>
+        </div>
+        <p class="note" id="schedNext"></p>
+      </div>
+      <div class="card">
+        <label class="toggle"><input type="checkbox" data-set="syncOnStartup"><span></span><div><b data-i18n="sync_on_startup"></b><small data-i18n="sync_on_startup_d"></small></div></label>
+        <label class="toggle"><input type="checkbox" data-set="startWithWindows"><span></span><div><b data-i18n="start_with_windows"></b><small data-i18n="start_with_windows_d"></small></div></label>
+        <p class="hint" data-i18n="missed_runs_note"></p>
+      </div>
+    </section>
+
+    <!-- INTERNET -->
+    <section class="page" id="page-internet">
+      <h2 data-i18n="internet_title"></h2>
+      <p class="muted" data-i18n="internet_intro"></p>
+      <div class="card">
+        <h3 data-i18n="speed_title"></h3>
+        <div class="grid2">
+          <div class="field"><label data-i18n="day_limit"></label><div class="inline"><input type="number" min="0" step="64" data-set="dayLimitKBps" data-type="int"><span>KB/s</span></div><div class="hint" id="dayHint"></div></div>
+          <div class="field"><label data-i18n="night_limit"></label><div class="inline"><input type="number" min="0" step="64" data-set="nightLimitKBps" data-type="int"><span>KB/s</span></div><div class="hint" id="nightHint"></div></div>
+        </div>
+        <div class="field"><label data-i18n="night_hours"></label><div class="inline"><input type="time" data-set="nightStart"><span>→</span><input type="time" data-set="nightEnd"></div></div>
+        <p class="hint" data-i18n="zero_no_limit"></p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="cap_title"></h3>
+        <div class="field"><label data-i18n="cap_label"></label><div class="inline"><input type="number" min="0" step="0.5" id="capGB"><span>GB</span></div><div class="hint" data-i18n="cap_hint"></div></div>
+        <div class="mini-bar big"><div id="capBar"></div></div>
+        <p class="note" id="capUsed"></p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="network_title"></h3>
+        <p class="note" id="netNow" data-i18n="checking"></p>
+        <label class="toggle"><input type="checkbox" data-set="pauseOnMetered"><span></span><div><b data-i18n="pause_metered"></b><small data-i18n="pause_metered_d"></small></div></label>
+        <div class="field"><label data-i18n="blocked_wifi"></label><div class="chips" id="blockedChips"></div><div class="inline"><input type="text" id="blockedIn" data-i18n-ph="wifi_name_ph"><button class="btn small" id="blockedAdd" data-i18n="btn_add"></button><button class="btn small ghost" id="blockedCur" data-i18n="btn_add_current"></button></div><div class="hint" data-i18n="blocked_wifi_d"></div></div>
+        <div class="field"><label data-i18n="allowed_wifi"></label><div class="chips" id="allowedChips"></div><div class="inline"><input type="text" id="allowedIn" data-i18n-ph="wifi_name_ph"><button class="btn small" id="allowedAdd" data-i18n="btn_add"></button><button class="btn small ghost" id="allowedCur" data-i18n="btn_add_current"></button></div><div class="hint" data-i18n="allowed_wifi_d"></div></div>
+      </div>
+      <div class="card">
+        <div class="field"><label data-i18n="parallel"></label><select data-set="parallel" data-type="int"><option>1</option><option>2</option><option>3</option><option>4</option><option>6</option><option>8</option></select><div class="hint" data-i18n="parallel_d"></div></div>
+      </div>
+    </section>
+
+    <!-- SAFETY -->
+    <section class="page" id="page-safety">
+      <h2 data-i18n="safety_title"></h2>
+      <p class="muted" data-i18n="safety_intro"></p>
+      <div class="card">
+        <h3 data-i18n="deleted_title"></h3>
+        <div class="choices">
+          <label class="choice"><input type="radio" name="dmode" value="archive" data-set="deleteMode"><div><b data-i18n="del_archive"></b><span data-i18n="del_archive_d"></span></div></label>
+          <label class="choice"><input type="radio" name="dmode" value="keep" data-set="deleteMode"><div><b data-i18n="del_keep"></b><span data-i18n="del_keep_d"></span></div></label>
+          <label class="choice"><input type="radio" name="dmode" value="trash" data-set="deleteMode"><div><b data-i18n="del_trash"></b><span data-i18n="del_trash_d"></span></div></label>
+        </div>
+        <div class="field"><label data-i18n="archive_days"></label><div class="inline"><input type="number" min="0" step="1" data-set="archiveDays" data-type="int" class="w90"><span data-i18n="days"></span></div><div class="hint" data-i18n="archive_days_d"></div></div>
+        <label class="toggle"><input type="checkbox" data-set="keepOldVersions"><span></span><div><b data-i18n="keep_versions"></b><small data-i18n="keep_versions_d"></small></div></label>
+      </div>
+      <div class="card">
+        <h3 data-i18n="drive_names_title"></h3>
+        <div class="grid2">
+          <div class="field"><label data-i18n="drive_folder_name"></label><input type="text" data-set="driveFolderName" maxlength="100"></div>
+          <div class="field"><label data-i18n="computer_name"></label><input type="text" data-set="computerName" maxlength="100"></div>
+        </div>
+        <p class="hint" data-i18n="drive_names_d"></p>
+        <p class="path-demo" id="pathDemo"></p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="full_check_title"></h3>
+        <p class="muted" data-i18n="full_check_d"></p>
+        <button class="btn" id="btnFullCheck" data-i18n="btn_full_check"></button>
+      </div>
+    </section>
+
+    <!-- ACTIVITY -->
+    <section class="page" id="page-activity">
+      <div class="title-row"><h2 data-i18n="activity_title"></h2><button class="btn small" id="btnLogs" data-i18n="btn_open_logs"></button></div>
+      <div class="card log-card"><div id="logList" class="log-list"></div></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="page" id="page-settings">
+      <h2 data-i18n="settings_title"></h2>
+      <div class="card">
+        <div class="field"><label for="langPick2" data-i18n="language"></label><select id="langPick2"></select>
+          <div class="hint"><span data-i18n="add_language_d"></span> <a href="#" id="lnkLangFolder" data-i18n="open_lang_folder"></a></div></div>
+        <label class="toggle"><input type="checkbox" data-set="notifications"><span></span><div><b data-i18n="notifications"></b><small data-i18n="notifications_d"></small></div></label>
+      </div>
+      <div class="card" id="accountSettings"></div>
+      <div class="card">
+        <details id="advanced">
+          <summary data-i18n="advanced_title"></summary>
+          <p class="muted" data-i18n="advanced_d"></p>
+          <div class="field"><label data-i18n="client_id"></label><input type="text" id="clientId" spellcheck="false" autocomplete="off"></div>
+          <div class="field"><label data-i18n="client_secret"></label><input type="password" id="clientSecret" spellcheck="false" autocomplete="off"></div>
+          <div class="row-actions"><button class="btn small" id="btnSaveCreds" data-i18n="btn_save"></button><button class="btn small ghost" id="btnGcloud" data-i18n="btn_open_gcloud"></button></div>
+          <p class="hint" data-i18n="advanced_note"></p>
+          <p class="hint"><span data-i18n="data_folder"></span> <code id="dataDir"></code></p>
+        </details>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="page" id="page-about">
+      <div class="card about-hero">
+        <img src="/static/icon.png" alt="" width="72" height="72">
+        <div>
+          <h1>Selva Sync</h1>
+          <p class="muted" data-i18n="tagline"></p>
+          <p class="ver"><span data-i18n="version"></span> <span id="verText"></span> · <span data-i18n="license_mit"></span></p>
+        </div>
+      </div>
+      <div class="card creator">
+        <div class="creator-label" data-i18n="created_by"></div>
+        <div class="creator-name">Dr. Selvakumar Vellingiri</div>
+        <button class="btn linkedin" id="btnAuthor">in&nbsp; <span data-i18n="btn_linkedin"></span></button>
+      </div>
+      <div class="card">
+        <h3 data-i18n="privacy_title"></h3>
+        <ul class="ticks">
+          <li data-i18n="privacy_1"></li>
+          <li data-i18n="privacy_2"></li>
+          <li data-i18n="privacy_3"></li>
+          <li data-i18n="privacy_4"></li>
+          <li data-i18n="privacy_5"></li>
+          <li data-i18n="privacy_6"></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 data-i18n="uninstall_title"></h3>
+        <p class="muted" data-i18n="uninstall_d"></p>
+        <label class="check"><input type="checkbox" id="unData"> <span data-i18n="uninstall_data"></span></label>
+        <div class="row-actions"><button class="btn danger" id="btnUninstall" data-i18n="btn_uninstall"></button><button class="btn ghost" id="btnQuit" data-i18n="btn_quit"></button></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- folder picker -->
+<div class="modal hidden" id="pickModal" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <div class="modal-head"><h3 data-i18n="pick_title"></h3><button class="x" data-close>×</button></div>
+    <div class="crumb" id="pickCrumb"></div>
+    <div class="pick-list" id="pickList"></div>
+    <div class="modal-foot">
+      <span class="muted small" id="pickSel"></span>
+      <button class="btn" data-close data-i18n="btn_cancel"></button>
+      <button class="btn primary" id="pickOk" data-i18n="btn_select_folder"></button>
+    </div>
+  </div>
+</div>
+
+<!-- preview -->
+<div class="modal hidden" id="prevModal" role="dialog" aria-modal="true">
+  <div class="modal-box wide">
+    <div class="modal-head"><h3 data-i18n="preview_title"></h3><button class="x" data-close>×</button></div>
+    <div class="prev-sum" id="prevSum"></div>
+    <div class="prev-list" id="prevList"></div>
+    <div class="modal-foot">
+      <button class="btn" data-close data-i18n="btn_close"></button>
+      <button class="btn primary" id="prevGo" data-i18n="btn_start_sync"></button>
+    </div>
+  </div>
+</div>
+
+<!-- confirm -->
+<div class="modal hidden" id="confirmModal" role="dialog" aria-modal="true">
+  <div class="modal-box narrow">
+    <div class="modal-head"><h3 id="confirmTitle"></h3></div>
+    <p id="confirmText"></p>
+    <div class="modal-foot">
+      <button class="btn" id="confirmNo" data-i18n="btn_cancel"></button>
+      <button class="btn primary" id="confirmYes" data-i18n="btn_ok"></button>
+    </div>
+  </div>
+</div>
+
+<div class="toast hidden" id="toast"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>
