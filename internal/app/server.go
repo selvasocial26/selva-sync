@@ -34,6 +34,7 @@ func (a *App) routes() http.Handler {
 	mux.Handle("/static/", a.requireSession(http.StripPrefix("/static/", fileServer)))
 	mux.HandleFunc("/i18n/", a.requireSessionFunc(a.handleI18n))
 	mux.HandleFunc("/oauth/callback", a.handleCallback)
+	mux.HandleFunc("/picked", a.handlePicked)
 
 	api := map[string]http.HandlerFunc{
 		"GET /api/ping":            func(w http.ResponseWriter, r *http.Request) { writeJSON(w, map[string]bool{"ok": true}) },
@@ -53,6 +54,9 @@ func (a *App) routes() http.Handler {
 		"GET /api/preview":         a.apiPreview,
 		"POST /api/reset-excludes": a.apiResetExcludes,
 		"POST /api/accept-disk":    a.apiAcceptDisk,
+		"POST /api/picker/start":   a.apiPickerStart,
+		"POST /api/picker/clear":   a.apiPickerClear,
+		"POST /api/export-setup":   a.apiExportSetup,
 	}
 	for pattern, h := range api {
 		method, path, _ := strings.Cut(pattern, " ")
@@ -239,6 +243,7 @@ func (a *App) apiState(w http.ResponseWriter, r *http.Request) {
 		"hasPreview":  a.Engine.LastPreview() != nil,
 		"redirectUri": a.callbackURL(),
 	}
+	a.featureState(resp, set)
 	if compID != "" {
 		resp["driveUrl"] = "https://drive.google.com/drive/folders/" + compID
 	}
@@ -298,7 +303,8 @@ func (a *App) apiSettings(w http.ResponseWriter, r *http.Request) {
 	if s.ClientSecret == "" && s.ClientID == cur.ClientID {
 		s.ClientSecret = cur.ClientSecret
 	}
-	if err := a.SaveSettings(s); err != nil {
+	// the backup folder is changed only through Google's folder chooser
+	if err := a.saveSettings(s, true); err != nil {
 		writeErr(w, 500, "save_failed")
 		return
 	}

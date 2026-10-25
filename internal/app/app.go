@@ -27,7 +27,7 @@ import (
 // Build-time defaults (set with -ldflags). Users can override them in
 // Settings > Advanced with their own Google Cloud credentials.
 var (
-	Version             = "1.1.0"
+	Version             = "1.2.0"
 	DefaultClientID     = ""
 	DefaultClientSecret = ""
 )
@@ -60,6 +60,11 @@ type App struct {
 	QuitHook func()
 	quitting atomic.Bool
 
+	picker       pickerState
+	saveMu       sync.Mutex // one settings save at a time
+	setupProblem bool       // the office setup file has mistakes
+	setupBadKeys string     // settings in it that could not be read
+
 	aboutMu sync.Mutex
 	about   *drive.About
 	aboutAt time.Time
@@ -85,8 +90,12 @@ func New(dataDir string) (*App, error) {
 	if a.loadStatus == config.LoadNew || a.loadStatus == config.LoadRecovered {
 		store.SaveSettings(a.settings)
 	}
+	a.loadSetupFile(a.loadStatus == config.LoadNew)
 	a.Log = &engine.Logger{Dir: filepath.Join(dataDir, "logs")}
 	a.Log.PruneOld(time.Now())
+	if a.setupProblem {
+		a.Log.Warn("setup_problem", map[string]string{"keys": a.setupBadKeys})
+	}
 	switch a.loadStatus {
 	case config.LoadRecovered:
 		a.Log.Warn("settings_recovered", nil)
@@ -117,7 +126,9 @@ func New(dataDir string) (*App, error) {
 		InstallID:       installID(store),
 		LegacyMachineID: platform.LegacyMachineID(),
 		VolumeID:        platform.VolumeID,
+		OnBattery:       platform.OnBattery,
 	}, a.Log)
+	a.Engine.Hooks.ReportText = a.reportText
 	return a, nil
 }
 
@@ -182,6 +193,7 @@ const CredsFileName = "google-client.json"
 var (
 	fileCredsOnce        sync.Once
 	fileCredID, fileCred string
+	filePickerURL        string
 )
 
 func fileCreds() (string, string) {
@@ -190,6 +202,7 @@ func fileCreds() (string, string) {
 		for _, p := range []string{filepath.Join(filepath.Dir(exe), CredsFileName), filepath.Join(config.DataDir(), CredsFileName)} {
 			if id, sec, ok := ParseCredsFile(p); ok {
 				fileCredID, fileCred = id, sec
+				filePickerURL = parsePickerURL(p)
 				return
 			}
 		}
@@ -215,6 +228,22 @@ func ParseCredsFile(path string) (id, secret string, ok bool) {
 	return f.Installed.ClientID, f.Installed.ClientSecret, true
 }
 
+// parsePickerURL reads the optional "selvasync_picker_url" that a
+// publisher may add to google-client.json.
+func parsePickerURL(path string) string {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	var f struct {
+		URL string `json:"selvasync_picker_url"`
+	}
+	json.Unmarshal(b, &f)
+	s := config.Settings{PickerURL: f.URL}
+	s.Normalize()
+	return s.PickerURL
+}
+
 // Settings returns a copy of the current settings.
 func (a *App) Settings() config.Settings {
 	a.mu.Lock()
@@ -224,18 +253,31 @@ func (a *App) Settings() config.Settings {
 	s.Excludes = append([]string{}, s.Excludes...)
 	s.BlockedWifi = append([]string{}, s.BlockedWifi...)
 	s.AllowedWifi = append([]string{}, s.AllowedWifi...)
+	s.Managed = append([]string{}, s.Managed...)
 	return s
 }
 
 // SaveSettings validates, stores and applies new settings.
-func (a *App) SaveSettings(s config.Settings) error {
+func (a *App) SaveSettings(s config.Settings) error { return a.saveSettings(s, false) }
+
+// saveSettings stores new settings. keepLocation keeps the stored backup
+// folder (the window never changes it; only Google's folder chooser does).
+// Everything is decided under the lock, so a folder chosen at the same
+// moment is never undone by a window save.
+func (a *App) saveSettings(s config.Settings, keepLocation bool) error {
+	a.saveMu.Lock()
+	defer a.saveMu.Unlock()
+	a.ensureSourceIDs(&s)
+	a.mu.Lock()
+	old := a.settings
+	if keepLocation {
+		s.Location = old.Location
+	}
+	s = keepManaged(s, old)
 	s.Normalize()
 	if !a.I18n.Has(s.Language) {
 		s.Language = "en"
 	}
-	a.ensureSourceIDs(&s)
-	a.mu.Lock()
-	old := a.settings
 	a.settings = s
 	a.loadStatus = config.LoadOK // the user has now saved settings
 	a.mu.Unlock()
@@ -256,7 +298,33 @@ func (a *App) SaveSettings(s config.Settings) error {
 		a.Engine.ForgetRemote()
 		a.Engine.Resume()
 	}
+	if old.Location != s.Location {
+		// wait for any running sync to finish before the new folder is used
+		a.Engine.Pause(60 * time.Second)
+		a.Engine.Resume()
+		a.Log.Info("location_set", map[string]string{"name": locationLabel(s)})
+	}
 	return nil
+}
+
+// locationLabel names the backup folder for people.
+func locationLabel(s config.Settings) string {
+	if s.Location.FolderID == "" {
+		return "My Drive › " + s.DriveFolderName
+	}
+	return s.Location.Name
+}
+
+// pickerURL is the web page with Google's folder chooser ("" if none).
+func (a *App) pickerURL() string {
+	if u := a.Settings().PickerURL; u != "" {
+		return u
+	}
+	if DefaultPickerURL != "" {
+		return DefaultPickerURL
+	}
+	fileCreds()
+	return filePickerURL
 }
 
 func anyEnabled(src []config.Source) bool {
@@ -316,6 +384,7 @@ func (a *App) Start() error {
 	}
 	go a.scheduler()
 	go a.trayUpdater()
+	go a.alertWatcher()
 	return nil
 }
 

@@ -63,6 +63,16 @@ func TestDemoServer(t *testing.T) {
 	if err := a.Start(); err != nil {
 		t.Fatal(err)
 	}
+	if os.Getenv("SELVASYNC_DEMO_V12") != "" {
+		fd.AddFolder("sdTeam", "Utthan Team", "", "sdTeam")
+		fd.AddFolder("sdBk", "PC Backups", "sdTeam", "sdTeam")
+		a.mu.Lock()
+		a.settings.PickerURL = "https://example.github.io/selva-sync/picker.html"
+		a.settings.Location = config.Location{FolderID: "sdBk", Name: "Utthan Team › PC Backups", DriveID: "sdTeam"}
+		a.settings.Managed = []string{"archiveDays", "deleteMode"}
+		a.settings.OnlyOnAC = true
+		a.mu.Unlock()
+	}
 	if os.Getenv("SELVASYNC_DEMO_SIGNEDIN") != "" {
 		s := a.Settings()
 		s.Sources = s.Sources[:1]

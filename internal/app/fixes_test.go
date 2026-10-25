@@ -17,6 +17,7 @@ import (
 	"github.com/selvasync/selvasync/internal/config"
 	"github.com/selvasync/selvasync/internal/engine"
 	"github.com/selvasync/selvasync/internal/fakedrive"
+	"github.com/selvasync/selvasync/internal/platform"
 )
 
 type tenv struct {
@@ -47,6 +48,9 @@ func newT(t *testing.T, tokenDelay time.Duration, prep func(dir string)) *tenv {
 	data := filepath.Join(dir, "data")
 	os.MkdirAll(data, 0o700)
 	b, _ := json.Marshal(map[string]string{"refresh_token": "r", "client_id": DefaultClientID})
+	if enc, err := platform.Protect(b); err == nil { // DPAPI on Windows
+		b = enc
+	}
 	os.WriteFile(filepath.Join(data, "token.bin"), b, 0o600)
 	if prep != nil {
 		prep(data)
