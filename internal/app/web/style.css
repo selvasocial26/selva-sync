@@ -247,3 +247,9 @@ details summary { cursor: pointer; font-weight: 650; }
 .toast { position: fixed; bottom: 22px; inset-inline-end: 22px; background: var(--ink); color: var(--panel); padding: 10px 16px; border-radius: 10px; font-size: 13.5px; z-index: 60; box-shadow: 0 4px 18px #0003; max-width: 380px; }
 
 .offline-bar { position: sticky; top: -28px; margin: -28px -34px 16px; padding: 10px 34px; background: var(--bad-soft); color: var(--bad); font-weight: 600; z-index: 5; }
+.notice.bad { background: var(--bad-soft, #fdecea); border-color: transparent; }
+.location-now { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; margin: 10px 0; overflow-wrap: anywhere; }
+.location-now .ic { font-size: 20px; }
+.note.warn { color: var(--warn, #b54708); font-weight: 600; }
+.managed-lock { opacity: .6; }
+h4 { margin: 18px 0 4px; font-size: 15px; }

@@ -223,8 +223,48 @@
     renderChips();
     renderAccountSettings();
     renderLogs();
+    renderLocation();
+    applyManaged();
     $("#verText").textContent = S.version;
     $("#dataDir").textContent = S.dataDir;
+  }
+
+  // settings fixed by the organisation's setup file
+  function managed(key) { return (S.settings.managed || []).includes(key); }
+  function applyManaged() {
+    const m = S.settings.managed || [];
+    $("#managedNotice").classList.toggle("hidden", !m.length);
+    $$("[data-set]").forEach((inp) => {
+      const lock = managed(inp.dataset.set.split(".")[0]);
+      inp.disabled = lock;
+      const box = inp.closest(".toggle, .choice, .field");
+      if (box) { box.classList.toggle("managed-lock", lock); if (lock) box.title = t("err_managed"); else box.removeAttribute("title"); }
+    });
+    const extra = { excludes: ["#excludes", "#btnResetEx"], monthlyCapMB: ["#capGB"],
+      blockedWifi: ["#blockedIn", "#blockedAdd", "#blockedCur"], allowedWifi: ["#allowedIn", "#allowedAdd", "#allowedCur"] };
+    for (const k in extra) for (const sel of extra[k]) { const e = $(sel); if (e) e.disabled = managed(k); }
+  }
+
+  function renderLocation() {
+    const custom = !!(S.settings.location && S.settings.location.folderId);
+    $("#locationNow").textContent = S.locationLabel || "";
+    $("#driveFolderField").classList.toggle("hidden", custom);
+    const lock = managed("location");
+    const grant = lock && custom; // organisation's folder: this PC may need access once
+    $("#btnPickLoc").classList.toggle("hidden", !S.pickerAvailable || (lock && !grant));
+    $("#btnPickLoc").textContent = t(grant ? "btn_grant_location" : "btn_pick_location");
+    $("#btnPickLoc").disabled = !S.signedIn;
+    $("#btnClearLoc").classList.toggle("hidden", !custom || lock);
+    let hint = "";
+    if (grant) hint = t("location_managed_grant");
+    else if (lock) hint = t("location_managed");
+    else if (!S.pickerAvailable) hint = t("location_no_picker");
+    else if (!S.signedIn) hint = t("location_sign_in_first");
+    $("#locationHint").textContent = hint;
+  }
+  function remoteBase() {
+    const custom = !!(S.settings.location && S.settings.location.folderId);
+    return (custom ? S.locationLabel.split(" › ").join(" / ") : "Google Drive / " + S.settings.driveFolderName) + " / " + S.settings.computerName;
   }
 
   function statusInfo() {
@@ -246,6 +286,8 @@
       case "failed":
         if (lr.reason === "signin") return { cls: "bad", title: t("st_signin"), sub: t("st_signin_d") };
         if (lr.reason === "drive_full") return { cls: "bad", title: t("st_full"), sub: t("st_full_d") };
+        if (lr.reason === "location_missing") return { cls: "bad", title: t("st_location"), sub: t("st_location_d") };
+        if (lr.reason === "location_inside") return { cls: "bad", title: t("st_location_inside"), sub: t("st_location_inside_d") };
         return { cls: "bad", title: t("st_failed"), sub: t("st_failed_d") };
     }
     return { cls: "idle", title: t("st_ready"), sub: "" };
@@ -260,6 +302,23 @@
       box.append(el("div", { class: "notice warn" },
         el("h3", { text: t("settings_" + S.loadStatus + "_title") }),
         el("p", { text: t("settings_" + S.loadStatus + "_d") })));
+    }
+    if (S.overdueDays > 0) {
+      box.append(el("div", { class: "notice bad" },
+        el("h3", { text: t("overdue_title", { days: num(S.overdueDays) }) }),
+        el("p", { text: t("overdue_d") })));
+    }
+    const lr0 = S.lastRun;
+    if (lr0 && lr0.result === "failed" && (lr0.reason === "location_missing" || lr0.reason === "location_inside")) {
+      const inside = lr0.reason === "location_inside";
+      const lock = managed("location");
+      box.append(el("div", { class: "notice bad" },
+        el("h3", { text: t(inside ? "st_location_inside" : "st_location") }),
+        el("p", { text: t(inside ? "st_location_inside_d" : (lock ? "location_managed_grant" : "st_location_d")) }),
+        el("div", { class: "actions" }, el("button", { class: "btn primary", text: t(lock ? "btn_grant_location" : "btn_pick_location"), onclick: () => show("safety") }))));
+    }
+    if (S.setupProblem !== undefined) {
+      box.append(el("div", { class: "notice warn" }, el("p", { text: t("setup_problem", { keys: S.setupProblem || "—" }) })));
     }
     if (!S.configured) {
       box.append(el("div", { class: "notice warn" },
@@ -383,7 +442,7 @@
       }
       list.append(el("div", { class: "source" }, tog,
         el("div", { class: "grow" }, pathLine,
-          el("div", { class: "remote", text: "→ Google Drive / " + S.settings.driveFolderName + " / " + S.settings.computerName + " / " + remotePrefix(s.path) })),
+          el("div", { class: "remote", text: "→ " + remoteBase() + " / " + remotePrefix(s.path) })),
         el("button", { class: "btn small ghost", text: t("btn_remove"), onclick: async () => {
           if (!(await confirmBox(t("remove_folder_title"), t("remove_folder_d", { path: s.path })))) return;
           const cur = find();
@@ -409,7 +468,7 @@
       bar.style.width = Math.min(100, p) + "%"; bar.className = p >= 100 ? "bad" : p > 85 ? "warn" : "";
       $("#capUsed").textContent = t("cap_used", { used: bytes(used), cap: bytes(cap) });
     } else { bar.style.width = "0"; $("#capUsed").textContent = t("cap_used_nolimit", { used: bytes(used) }); }
-    $("#pathDemo").textContent = "Google Drive / " + S.settings.driveFolderName + " / " + S.settings.computerName + " / D-Drive / …";
+    $("#pathDemo").textContent = remoteBase() + " / D-Drive / …";
     $("#schedNext").textContent = S.settings.schedule.mode === "manual" ? t("manual_only") : t("next_sync_at", { time: fmtDate(S.nextRun) });
   }
 
@@ -418,7 +477,7 @@
       const c = $(box);
       c.innerHTML = "";
       (S.settings[key] || []).forEach((name, i) => {
-        c.append(el("span", { class: "chip" }, name, el("button", { "aria-label": t("btn_remove"), text: "×", onclick: () => { S.settings[key].splice(i, 1); scheduleSave(); renderChips(); } })));
+        c.append(el("span", { class: "chip" }, name, managed(key) ? null : el("button", { "aria-label": t("btn_remove"), text: "×", onclick: () => { S.settings[key].splice(i, 1); scheduleSave(); renderChips(); } })));
       });
     }
   }
@@ -543,7 +602,15 @@
     }
     if (pv.truncated) list.append(el("div", { class: "empty", text: t("pv_more") }));
     for (const m of pv.missing || []) list.prepend(el("div", { class: "prev-item" }, el("span", { class: "badge remove", text: "!" }), el("span", { class: "p", text: t("log_source_missing", { path: m }) })));
-    $("#prevGo").disabled = !pv.items.length;
+    const sp = $("#prevSpace");
+    sp.textContent = ""; sp.className = "note";
+    const acc = S.account, shared = S.settings.location && S.settings.location.driveId;
+    if (acc && acc.limit > 0 && !shared) {
+      const free = Math.max(0, acc.limit - acc.usage);
+      sp.textContent = t("pv_space", { need: bytes(pv.bytes), free: bytes(free) });
+      if (pv.bytes > free) { sp.textContent += " " + t("pv_space_low"); sp.className = "note warn"; }
+    } else if (pv.bytes) sp.textContent = t("pv_space_shared", { need: bytes(pv.bytes) });
+    $("#prevGo").disabled = false; // also lets a first sync with nothing new finish
     $("#prevModal").classList.remove("hidden");
   }
 
@@ -587,6 +654,16 @@
     } catch (_) { $("#netNow").textContent = ""; }
   }
 
+  // after opening Google's folder chooser, watch for the choice
+  async function pollLocation() {
+    const before = JSON.stringify(S.settings.location || {});
+    for (let i = 0; i < 180; i++) {
+      await new Promise((r) => setTimeout(r, 3000));
+      const fresh = await api("/api/state").catch(() => null);
+      if (fresh && JSON.stringify(fresh.settings.location || {}) !== before) { await refreshState(); toast(t("location_saved")); return; }
+    }
+  }
+
   // ---------- polling ----------
   let wasRunning = false;
   async function poll() {
@@ -612,7 +689,11 @@
   }
   async function refreshState() {
     const fresh = await api("/api/state");
-    if (dirty && S) fresh.settings = S.settings; // keep edits that are not saved yet
+    if (dirty && S) { // keep edits that are not saved yet
+      const keep = S.settings;
+      keep.location = fresh.settings.location; keep.managed = fresh.settings.managed;
+      fresh.settings = keep;
+    }
     S = Object.assign(S || {}, fresh);
     renderAll();
   }
@@ -622,7 +703,8 @@
     $$("#nav button").forEach((b) => b.addEventListener("click", () => show(b.dataset.page)));
     $("#langPick").addEventListener("change", (e) => changeLang(e.target.value));
     $("#langPick2").addEventListener("change", (e) => changeLang(e.target.value));
-    $("#btnSync").addEventListener("click", () => startSync({}));
+    // the very first backup shows how much will be uploaded before starting
+    $("#btnSync").addEventListener("click", () => (S.lastSuccess ? startSync({}) : runPreview()));
     $("#btnForce").addEventListener("click", () => startSync({ force: true }));
     $("#btnPreview").addEventListener("click", runPreview);
     $("#btnStop").addEventListener("click", () => api("/api/stop", {}));
@@ -660,6 +742,22 @@
       await api("/api/uninstall", { removeData: $("#unData").checked });
       document.body.innerHTML = "";
       document.body.append(el("div", { class: "card", style: "margin:40px", text: t("uninstall_done") }));
+    });
+    $("#btnPickLoc").addEventListener("click", async () => {
+      const custom = !!(S.settings.location && S.settings.location.folderId);
+      const grant = managed("location");
+      if (!(await confirmBox(t("location_title"), grant ? t("location_managed_grant") : t(custom || S.lastSuccess ? "location_change_d" : "location_pick_d")))) return;
+      try { await api("/api/picker/start", {}); toast(t("picker_browser")); pollLocation(); }
+      catch (e) { toast(t(e.message)); }
+    });
+    $("#btnClearLoc").addEventListener("click", async () => {
+      if (!(await confirmBox(t("btn_default_location"), t("location_default_d")))) return;
+      try { await api("/api/picker/clear", {}); await refreshState(); toast(t("saved")); }
+      catch (e) { toast(t(e.message)); }
+    });
+    $("#btnExportSetup").addEventListener("click", async () => {
+      try { const r = await api("/api/export-setup", {}); toast(t("export_done", { path: r.path })); }
+      catch (e) { toast(t("save_failed")); }
     });
     $("#clientId").addEventListener("input", () => { credsDirty = true; });
     $("#clientSecret").addEventListener("input", () => { credsDirty = true; });

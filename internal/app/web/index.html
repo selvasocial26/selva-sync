@@ -103,7 +103,12 @@
       <div class="card">
         <label class="toggle"><input type="checkbox" data-set="syncOnStartup"><span></span><div><b data-i18n="sync_on_startup"></b><small data-i18n="sync_on_startup_d"></small></div></label>
         <label class="toggle"><input type="checkbox" data-set="startWithWindows"><span></span><div><b data-i18n="start_with_windows"></b><small data-i18n="start_with_windows_d"></small></div></label>
+        <label class="toggle"><input type="checkbox" data-set="onlyOnAC"><span></span><div><b data-i18n="only_on_ac"></b><small data-i18n="only_on_ac_d"></small></div></label>
         <p class="hint" data-i18n="missed_runs_note"></p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="alert_title"></h3>
+        <div class="field"><label data-i18n="alert_days"></label><div class="inline"><input type="number" min="0" max="365" step="1" data-set="alertDays" data-type="int" class="w90"><span data-i18n="days"></span></div><div class="hint" data-i18n="alert_days_d"></div></div>
       </div>
     </section>
 
@@ -142,6 +147,16 @@
     <section class="page" id="page-safety">
       <h2 data-i18n="safety_title"></h2>
       <p class="muted" data-i18n="safety_intro"></p>
+      <div class="card" id="locationCard">
+        <h3 data-i18n="location_title"></h3>
+        <p class="muted" data-i18n="location_d"></p>
+        <div class="location-now"><span class="ic">📁</span><b id="locationNow"></b></div>
+        <div class="row-actions" id="locationBtns">
+          <button class="btn primary" id="btnPickLoc" data-i18n="btn_pick_location"></button>
+          <button class="btn ghost" id="btnClearLoc" data-i18n="btn_default_location"></button>
+        </div>
+        <p class="hint" id="locationHint"></p>
+      </div>
       <div class="card">
         <h3 data-i18n="deleted_title"></h3>
         <div class="choices">
@@ -151,11 +166,12 @@
         </div>
         <div class="field"><label data-i18n="archive_days"></label><div class="inline"><input type="number" min="0" step="1" data-set="archiveDays" data-type="int" class="w90"><span data-i18n="days"></span></div><div class="hint" data-i18n="archive_days_d"></div></div>
         <label class="toggle"><input type="checkbox" data-set="keepOldVersions"><span></span><div><b data-i18n="keep_versions"></b><small data-i18n="keep_versions_d"></small></div></label>
+        <label class="toggle"><input type="checkbox" data-set="reports"><span></span><div><b data-i18n="reports"></b><small data-i18n="reports_d"></small></div></label>
       </div>
       <div class="card">
         <h3 data-i18n="drive_names_title"></h3>
         <div class="grid2">
-          <div class="field"><label data-i18n="drive_folder_name"></label><input type="text" data-set="driveFolderName" maxlength="100"></div>
+          <div class="field" id="driveFolderField"><label data-i18n="drive_folder_name"></label><input type="text" data-set="driveFolderName" maxlength="100"></div>
           <div class="field"><label data-i18n="computer_name"></label><input type="text" data-set="computerName" maxlength="100"></div>
         </div>
         <p class="hint" data-i18n="drive_names_d"></p>
@@ -177,12 +193,18 @@
     <!-- SETTINGS -->
     <section class="page" id="page-settings">
       <h2 data-i18n="settings_title"></h2>
+      <div class="notice info hidden" id="managedNotice"><p data-i18n="managed_notice"></p></div>
       <div class="card">
         <div class="field"><label for="langPick2" data-i18n="language"></label><select id="langPick2"></select>
           <div class="hint"><span data-i18n="add_language_d"></span> <a href="#" id="lnkLangFolder" data-i18n="open_lang_folder"></a></div></div>
         <label class="toggle"><input type="checkbox" data-set="notifications"><span></span><div><b data-i18n="notifications"></b><small data-i18n="notifications_d"></small></div></label>
       </div>
       <div class="card" id="accountSettings"></div>
+      <div class="card">
+        <h3 data-i18n="office_title"></h3>
+        <p class="muted" data-i18n="office_d"></p>
+        <div class="row-actions"><button class="btn small" id="btnExportSetup" data-i18n="btn_export_setup"></button></div>
+      </div>
       <div class="card">
         <details id="advanced">
           <summary data-i18n="advanced_title"></summary>
@@ -192,6 +214,7 @@
           <div class="row-actions"><button class="btn small" id="btnSaveCreds" data-i18n="btn_save"></button><button class="btn small ghost" id="btnGcloud" data-i18n="btn_open_gcloud"></button></div>
           <p class="hint" data-i18n="advanced_note"></p>
           <p class="hint"><span data-i18n="data_folder"></span> <code id="dataDir"></code></p>
+          <div class="field"><label data-i18n="picker_url"></label><input type="text" data-set="pickerUrl" spellcheck="false" autocomplete="off" placeholder="https://"><div class="hint" data-i18n="picker_url_d"></div></div>
         </details>
       </div>
     </section>
@@ -251,6 +274,7 @@
   <div class="modal-box wide">
     <div class="modal-head"><h3 data-i18n="preview_title"></h3><button class="x" data-close>×</button></div>
     <div class="prev-sum" id="prevSum"></div>
+    <div class="note" id="prevSpace"></div>
     <div class="prev-list" id="prevList"></div>
     <div class="modal-foot">
       <button class="btn" data-close data-i18n="btn_close"></button>
