@@ -430,5 +430,6 @@
   "whole_pc_added": "Added {drives}. Check the size before the first sync.",
   "whole_pc_none": "No internal drives were found.",
   "cloud_files": "Also back up OneDrive files that are only online",
-  "cloud_files_d": "Files with the cloud icon are downloaded one at a time for the backup and made online-only again right after, so no disk space stays in use. This uses internet data for the download as well as the upload."
+  "cloud_files_d": "Files with the cloud icon are downloaded one at a time for the backup and made online-only again right after, so no disk space stays in use. This uses internet data for the download as well as the upload.",
+  "msg_install_confirm": "Install Selva Sync {new} for your Windows user?\n\nIt will copy itself to your user's Programs folder, add a Start menu shortcut and an entry in \"Apps\", and start with Windows (you can turn this off in Schedule). No administrator rights are needed. Uninstall any time from Windows Settings > Apps."
 }

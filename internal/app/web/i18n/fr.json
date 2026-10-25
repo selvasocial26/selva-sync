@@ -430,5 +430,6 @@
   "whole_pc_added": "{drives} ajouté. Vérifiez la taille avant la première synchronisation.",
   "whole_pc_none": "Aucun disque interne trouvé.",
   "cloud_files": "Sauvegarder aussi les fichiers OneDrive disponibles uniquement en ligne",
-  "cloud_files_d": "Les fichiers avec l'icône de nuage sont téléchargés un par un pour la sauvegarde, puis remis en ligne uniquement juste après : aucun espace disque n'est occupé. Cela utilise des données internet pour le téléchargement et l'envoi."
+  "cloud_files_d": "Les fichiers avec l'icône de nuage sont téléchargés un par un pour la sauvegarde, puis remis en ligne uniquement juste après : aucun espace disque n'est occupé. Cela utilise des données internet pour le téléchargement et l'envoi.",
+  "msg_install_confirm": "Installer Selva Sync {new} pour votre utilisateur Windows ?\n\nIl se copiera dans le dossier Programs de votre utilisateur, ajoutera un raccourci dans le menu Démarrer et une entrée dans « Applications », et démarrera avec Windows (désactivable dans Planification). Aucun droit administrateur n'est nécessaire. Désinstallez-le à tout moment depuis Paramètres Windows > Applications."
 }

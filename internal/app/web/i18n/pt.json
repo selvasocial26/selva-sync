@@ -430,5 +430,6 @@
   "whole_pc_added": "{drives} adicionado. Confira o tamanho antes da primeira sincronização.",
   "whole_pc_none": "Nenhuma unidade interna encontrada.",
   "cloud_files": "Fazer backup também dos arquivos do OneDrive que estão só online",
-  "cloud_files_d": "Arquivos com o ícone de nuvem são baixados um por vez para o backup e voltam a ficar só online logo depois, sem ocupar espaço em disco. Usa dados de internet para o download e para o envio."
+  "cloud_files_d": "Arquivos com o ícone de nuvem são baixados um por vez para o backup e voltam a ficar só online logo depois, sem ocupar espaço em disco. Usa dados de internet para o download e para o envio.",
+  "msg_install_confirm": "Instalar o Selva Sync {new} para o seu usuário do Windows?\n\nEle será copiado para a pasta Programs do seu usuário, adicionará um atalho no menu Iniciar e uma entrada em \"Aplicativos\", e iniciará com o Windows (pode desligar em Agendamento). Não precisa de permissão de administrador. Desinstale quando quiser em Configurações do Windows > Aplicativos."
 }
