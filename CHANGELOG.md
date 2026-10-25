@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.4 (25 Oct 2026)
+
+- **Back up whole computer** (Folders page): one click adds every internal drive (C:, D:...). USB and network drives are left out. Windows, programs, AppData, the Recycle Bin and temporary files are skipped as before. Folders already added inside those drives are replaced by the drive (same place on Drive, so nothing is uploaded twice). The size and free Google Drive space are shown before anything is uploaded.
+- **Also back up OneDrive files that are only online** (Folders page, off by default): files with the cloud icon are downloaded one at a time for the backup and made online-only again right after, so no disk space stays in use. Files set to "Always keep on this device" are never changed. Unchanged online-only files are not downloaded again, not even by the monthly check.
+
 ## 1.2.3 (25 Oct 2026)
 
 - Folders that OneDrive manages (for example a Desktop or Documents folder backed up by OneDrive) were hidden in *Add folder* and skipped during backup. They are now shown and backed up. Files that are "online-only" in OneDrive are still skipped, so a backup never downloads them; set them to *Always keep on this device* to include them.
