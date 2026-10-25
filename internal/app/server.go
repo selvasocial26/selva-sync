@@ -353,13 +353,14 @@ func (a *App) apiBrowse(w http.ResponseWriter, r *http.Request) {
 	p := r.URL.Query().Get("path")
 	if p == "" {
 		var out []browseEntry
-		home, _ := os.UserHomeDir()
-		if home != "" {
-			for _, n := range []string{"Desktop", "Documents", "Downloads", "Pictures", "Videos", "Music"} {
-				fp := filepath.Join(home, n)
-				if st, err := os.Stat(fp); err == nil && st.IsDir() {
-					out = append(out, browseEntry{Name: n, Path: fp, Kind: "shortcut"})
-				}
+		for _, n := range []string{"Desktop", "Documents", "Downloads", "Pictures", "Videos", "Music"} {
+			// real location, also when OneDrive backs up the folder
+			fp := platform.KnownFolder(n)
+			if fp == "" {
+				continue
+			}
+			if st, err := os.Stat(fp); err == nil && st.IsDir() {
+				out = append(out, browseEntry{Name: n, Path: fp, Kind: "shortcut"})
 			}
 		}
 		for _, d := range platform.Drives() {

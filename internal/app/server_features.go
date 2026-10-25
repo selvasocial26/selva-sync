@@ -217,12 +217,16 @@ func (a *App) apiPickerClear(w http.ResponseWriter, r *http.Request) {
 func (a *App) apiExportSetup(w http.ResponseWriter, r *http.Request) {
 	b := ExportSetup(a.Settings())
 	dir := ""
-	if home, err := os.UserHomeDir(); err == nil {
+	{
 		for _, d := range []string{"Downloads", "Desktop"} {
-			if st, err := os.Stat(filepath.Join(home, d)); err == nil && st.IsDir() {
+			base := platform.KnownFolder(d)
+			if base == "" {
+				continue
+			}
+			if st, err := os.Stat(base); err == nil && st.IsDir() {
 				// own folder, so the copy of SelvaSync.exe in Downloads does
 				// not pick the file up by itself
-				dir = filepath.Join(home, d, "Selva Sync office setup")
+				dir = filepath.Join(base, "Selva Sync office setup")
 				if os.Mkdir(dir, 0o755) != nil {
 					if st, err := os.Lstat(dir); err != nil || !st.IsDir() {
 						dir = ""
