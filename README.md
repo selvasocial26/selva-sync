@@ -113,6 +113,16 @@ So Selva Sync takes your treasure and hides it safely in the forest of the cloud
 
 Yes, I named a backup app after myself. In my defence, "Treasure Forest Squirrel Sync" didn't fit on the icon.
 
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/) (application in progress; until approved, releases are unsigned and Windows may show "Windows protected your PC").
+
+- Releases are built only by GitHub Actions from a version tag in this repository, and every signing request is approved manually.
+- Team roles: author, reviewer and approver: Dr. Selvakumar Vellingiri ([@selvasocial26](https://github.com/selvasocial26)).
+- Privacy: Selva Sync sends files only to your own Google Drive and nothing to the developer or anyone else. See the [Privacy Policy](https://selvasocial26.github.io/privacy.html).
+
+Full policy: https://selvasocial26.github.io/code-signing.html
+
 ## Credits
 
 Created by Dr. Selvakumar Vellingiri, Lead – Knowledge Management & Partnerships at Utthan.

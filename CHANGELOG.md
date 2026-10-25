@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.5 (25 Oct 2026)
+
+- The first time you run SelvaSync.exe, it now explains what it will change on the PC (install for your user, Start menu shortcut, "Apps" entry, start with Windows) and asks before installing.
+- Code signing policy published (preparing for signed releases through SignPath Foundation).
+
 ## 1.2.4 (25 Oct 2026)
 
 - **Back up whole computer** (Folders page): one click adds every internal drive (C:, D:...). USB and network drives are left out. Windows, programs, AppData, the Recycle Bin and temporary files are skipped as before. Folders already added inside those drives are replaced by the drive (same place on Drive, so nothing is uploaded twice). The size and free Google Drive space are shown before anything is uploaded.

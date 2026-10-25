@@ -5,7 +5,7 @@
 # to let users choose the backup folder.
 set -euo pipefail
 cd "$(dirname "$0")"
-VERSION="${VERSION:-1.2.4}"
+VERSION="${VERSION:-1.2.5}"
 PKG=github.com/selvasync/selvasync/internal/app
 LDFLAGS="-s -w -H=windowsgui -X ${PKG}.Version=${VERSION}"
 if [ -n "${PICKER_URL:-}" ]; then

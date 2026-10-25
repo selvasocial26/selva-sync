@@ -65,6 +65,9 @@ func main() {
 				if !platform.MessageBox("Selva Sync", tr(key, map[string]string{"old": old, "new": app.Version}), true) {
 					return
 				}
+			} else if !platform.MessageBox("Selva Sync", tr("msg_install_confirm", map[string]string{"new": app.Version}), true) {
+				// first install: say what will change on this PC and ask first
+				return
 			}
 			if app.SignalRunning(dataDir, "quit") {
 				for i := 0; i < 100; i++ { // let the running copy save and close
