@@ -30,6 +30,10 @@ type File struct {
 	Modified string
 	Trashed  bool
 	Props    map[string]string
+	// v1.2: shared drives and access
+	DriveID  string // shared drive the file is in ("" = My Drive)
+	ReadOnly bool   // the user can only view this folder
+	NoAccess bool   // the app's token cannot see this file
 }
 
 type session struct {
@@ -75,6 +79,25 @@ type Server struct {
 	// CaseInsensitiveNames makes name='x' queries match regardless of case
 	// (believed to match real Drive query behaviour).
 	CaseInsensitiveNames bool
+
+	// ---- v1.2 extensions ----
+	// NoDeleteShared answers 403 to permanent deletes in shared drives
+	// (only organisers may delete there).
+	NoDeleteShared bool
+	// AboutLimit, if set, is the storage limit /about reports.
+	AboutLimit string
+}
+
+// AddFolder adds a folder directly (as if the user made it in Drive).
+func (s *Server) AddFolder(id, name, parent, driveID string) *File {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	f := &File{ID: id, Name: name, Mime: "application/vnd.google-apps.folder", DriveID: driveID}
+	if parent != "" {
+		f.Parents = []string{parent}
+	}
+	s.Files[id] = f
+	return f
 }
 
 func conflict(w http.ResponseWriter) {
@@ -110,6 +133,10 @@ func (s *Server) json(f *File) map[string]any {
 	if f.Props != nil {
 		m["appProperties"] = f.Props
 	}
+	if f.DriveID != "" {
+		m["driveId"] = f.DriveID
+	}
+	m["capabilities"] = map[string]any{"canAddChildren": f.Mime == "application/vnd.google-apps.folder" && !f.ReadOnly}
 	return m
 }
 
@@ -146,9 +173,18 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	}
 	p := r.URL.Path
 	q := r.URL.Query()
+	// Real Drive hides shared-drive items unless the app says it supports them.
+	if !strings.HasPrefix(p, "/upload/session/") && q.Get("supportsAllDrives") != "true" && s.touchesShared(r, p) {
+		notFound(w)
+		return
+	}
+	if p == "/drive/v3/files" && r.Method == "GET" && q.Get("includeItemsFromAllDrives") != "true" && s.hasShared() {
+		write(w, 400, map[string]any{"error": map[string]any{"message": "includeItemsFromAllDrives missing"}})
+		return
+	}
 	switch {
 	case p == "/drive/v3/about":
-		write(w, 200, map[string]any{"user": map[string]string{"emailAddress": "test@example.com", "displayName": "Test"}, "storageQuota": map[string]string{"limit": "16106127360", "usage": "1000"}})
+		write(w, 200, map[string]any{"user": map[string]string{"emailAddress": "test@example.com", "displayName": "Test"}, "storageQuota": map[string]string{"limit": s.aboutLimit(), "usage": "1000"}})
 	case p == "/drive/v3/files" && r.Method == "GET":
 		query := q.Get("q")
 		var out []map[string]any
@@ -231,11 +267,19 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 			notFound(w)
 			return
 		}
+		if f.NoAccess {
+			notFound(w)
+			return
+		}
 		if r.Method == "GET" {
 			write(w, 200, s.json(f))
 			return
 		}
 		if r.Method == "DELETE" {
+			if s.NoDeleteShared && f.DriveID != "" {
+				write(w, 403, map[string]any{"error": map[string]any{"errors": []map[string]string{{"reason": "insufficientFilePermissions"}}}})
+				return
+			}
 			var drop func(id string)
 			drop = func(id string) {
 				for _, c := range s.Files {
@@ -337,6 +381,9 @@ func (s *Server) create(meta map[string]any) (*File, bool) {
 	s.applyMeta(f, meta)
 	if len(f.Parents) == 0 {
 		f.Parents = []string{"root"}
+	}
+	if p, ok := s.Files[f.Parents[0]]; ok {
+		f.DriveID = p.DriveID
 	}
 	s.Files[f.ID] = f
 	return f, false
@@ -554,4 +601,48 @@ func (s *Server) Unlock() { s.mu.Unlock() }
 func md5hex(b []byte) string {
 	sum := md5.Sum(b)
 	return hex.EncodeToString(sum[:])
+}
+
+func (s *Server) aboutLimit() string {
+	if s.AboutLimit != "" {
+		return s.AboutLimit
+	}
+	return "16106127360"
+}
+
+func (s *Server) hasShared() bool {
+	for _, f := range s.Files {
+		if f.DriveID != "" {
+			return true
+		}
+	}
+	return false
+}
+
+// touchesShared reports whether a request addresses a shared-drive item
+// (by ID in the path, or as the parent of a new file).
+func (s *Server) touchesShared(r *http.Request, p string) bool {
+	for _, pre := range []string{"/drive/v3/files/", "/upload/drive/v3/files/"} {
+		if strings.HasPrefix(p, pre) {
+			id := strings.SplitN(strings.TrimPrefix(p, pre), "/", 2)[0]
+			if f, ok := s.Files[id]; ok && f.DriveID != "" {
+				return true
+			}
+		}
+	}
+	if ad := r.URL.Query().Get("addParents"); ad != "" {
+		if f, ok := s.Files[ad]; ok && f.DriveID != "" {
+			return true
+		}
+	}
+	if (p == "/drive/v3/files" || p == "/upload/drive/v3/files") && r.Method == "POST" {
+		body, _ := io.ReadAll(r.Body)
+		r.Body = io.NopCloser(bytes.NewReader(body))
+		for id, f := range s.Files {
+			if f.DriveID != "" && bytes.Contains(body, []byte(`"`+id+`"`)) {
+				return true
+			}
+		}
+	}
+	return false
 }
