@@ -52,6 +52,10 @@ type Hooks struct {
 	LegacyMachineID string
 	// VolumeID returns the serial number of the disk holding path, or "".
 	VolumeID func(path string) string
+	// OnBattery reports that a laptop is running on battery.
+	OnBattery func() bool
+	// ReportText writes the monthly report (month "2026-10").
+	ReportText func(month string, st config.MonthStats, set config.Settings) string
 }
 
 // Status is shown live in the app window.
@@ -121,6 +125,8 @@ type Engine struct {
 	usageDelta  atomic.Int64 // bytes uploaded this run not yet added to state.Usage
 	capReserved atomic.Int64
 	verified    sync.Map // folder keys checked on Drive during this run
+	runErrMu    sync.Mutex
+	runErrs     []string
 	skipDirs    sync.Map // folders not to archive this run (a move out of them failed)
 	mismatch    sync.Map // prefix -> path of sources skipped because the disk changed
 	speedAt     time.Time
@@ -139,6 +145,11 @@ var ErrBusy = errors.New("a sync is already running")
 var (
 	errCap   = errors.New("monthly data limit reached")
 	errStale = errors.New("account changed during sync")
+	// ErrLocation means the chosen backup folder is missing or not writable.
+	ErrLocation = errors.New("backup folder not available")
+	// ErrLocationInside means the chosen folder is inside a Selva Sync backup
+	// (of this or another computer), where it would be archived or mixed up.
+	ErrLocationInside = errors.New("backup folder is inside a Selva Sync backup")
 )
 
 // Options for one run.
@@ -289,7 +300,8 @@ func (e *Engine) FixClock(now time.Time) {
 	e.smu.Lock()
 	changed := false
 	for _, t := range []*time.Time{&e.state.LastScheduled, &e.state.LastAttempt, &e.state.LastSuccess,
-		&e.state.LastArchiveTrim, &e.state.LastFullCheck, &e.state.LastDeepCheck} {
+		&e.state.LastArchiveTrim, &e.state.LastFullCheck, &e.state.LastDeepCheck, &e.state.LastAlert,
+		&e.state.FirstAttempt, &e.state.LastPartial} {
 		if t.Round(0).After(now.Add(5 * time.Minute)) {
 			*t = now
 			changed = true
@@ -300,6 +312,18 @@ func (e *Engine) FixClock(now time.Time) {
 		e.markDirty()
 		e.saveState()
 	}
+}
+
+// AlertDue reports (once a day) that an overdue reminder may be shown.
+func (e *Engine) AlertDue(now time.Time) bool {
+	e.smu.Lock()
+	defer e.smu.Unlock()
+	if d := now.Sub(e.state.LastAlert.Round(0)); d >= 0 && d < 23*time.Hour {
+		return false
+	}
+	e.state.LastAlert = now
+	e.dirty.Store(true)
+	return true
 }
 
 // SaveNow writes the state to disk immediately (used at Windows shutdown).
@@ -426,6 +450,9 @@ func (e *Engine) Run(ctx context.Context, opt Options) config.RunSummary {
 
 	e.runGen = e.gen.Load()
 	e.verified = sync.Map{}
+	e.runErrMu.Lock()
+	e.runErrs = nil
+	e.runErrMu.Unlock()
 	e.skipDirs = sync.Map{}
 	markedRunning := false
 	reindexIncomplete := false
@@ -452,6 +479,12 @@ func (e *Engine) Run(ctx context.Context, opt Options) config.RunSummary {
 			if sum.Result == "ok" || sum.Result == "nothing" {
 				e.state.LastSuccess = sum.Start
 			}
+			if (sum.Result == "partial" || sum.Result == "cap" || sum.Result == "blocked") && sum.Uploaded+sum.Updated > 0 {
+				e.state.LastPartial = sum.Start
+			}
+			if sum.Result != "blocked" || sum.Uploaded+sum.Updated+sum.Moved+sum.Archived > 0 {
+				e.addMonthStats(sum)
+			}
 			e.smu.Unlock()
 			e.markDirty()
 			e.saveState()
@@ -474,6 +507,9 @@ func (e *Engine) Run(ctx context.Context, opt Options) config.RunSummary {
 		e.Log.Info("run_start", map[string]string{"mode": mode})
 		e.smu.Lock()
 		e.state.LastAttempt = sum.Start
+		if e.state.FirstAttempt.IsZero() {
+			e.state.FirstAttempt = sum.Start
+		}
 		e.smu.Unlock()
 	}
 
@@ -566,6 +602,7 @@ func (e *Engine) Run(ctx context.Context, opt Options) config.RunSummary {
 		sum.Result = "nothing"
 		e.Log.Info("nothing", nil)
 		e.trimArchive(ctx, set)
+		e.writeReport(ctx, set)
 		return sum
 	}
 
@@ -580,8 +617,93 @@ func (e *Engine) Run(ctx context.Context, opt Options) config.RunSummary {
 			sum.Result = "ok"
 		}
 		e.trimArchive(ctx, set)
+		e.writeReport(ctx, set)
 	}
 	return sum
+}
+
+// addMonthStats adds a finished run to this month's report totals.
+// Caller holds smu.
+func (e *Engine) addMonthStats(sum config.RunSummary) {
+	m := sum.Start.Format("2006-01")
+	st := e.state.Monthly[m]
+	if st == nil {
+		st = &config.MonthStats{}
+		e.state.Monthly[m] = st
+	}
+	st.Runs++
+	switch sum.Result {
+	case "ok", "nothing":
+		st.OK++
+	case "failed":
+		st.Failed++
+		st.Errors = append(st.Errors, sum.Start.Format("2006-01-02 15:04")+"  sync failed: "+sum.Reason)
+	default:
+		st.Problems++
+	}
+	st.Uploaded += sum.Uploaded
+	st.Updated += sum.Updated
+	st.Moved += sum.Moved
+	st.Archived += sum.Archived
+	st.Bytes += sum.Bytes
+	e.runErrMu.Lock()
+	st.Errors = append(st.Errors, e.runErrs...)
+	e.runErrMu.Unlock()
+	if len(st.Errors) > 50 {
+		st.Errors = st.Errors[len(st.Errors)-50:]
+	}
+	// keep about a year of totals
+	cutoff := sum.Start.AddDate(-1, -1, 0).Format("2006-01")
+	for k := range e.state.Monthly {
+		if k < cutoff {
+			delete(e.state.Monthly, k)
+		}
+	}
+	for k := range e.state.ReportDone {
+		if k < cutoff {
+			delete(e.state.ReportDone, k)
+		}
+	}
+}
+
+// writeReport puts last month's report file into this computer's backup
+// folder, once per month.
+func (e *Engine) writeReport(ctx context.Context, set config.Settings) {
+	if !set.Reports || e.Hooks.ReportText == nil {
+		return
+	}
+	now := time.Now()
+	// first day of this month, minus one month (AddDate on the 31st would skip a month)
+	month := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.Local).AddDate(0, -1, 0).Format("2006-01")
+	e.smu.Lock()
+	st := e.state.Monthly[month]
+	done := e.state.ReportDone[month]
+	compID := e.state.ComputerID
+	var copyStats config.MonthStats
+	if st != nil {
+		copyStats = *st
+		copyStats.Errors = append([]string(nil), st.Errors...)
+	}
+	e.smu.Unlock()
+	if st == nil || done || compID == "" {
+		return
+	}
+	text := e.Hooks.ReportText(month, copyStats, set)
+	tmp := filepath.Join(e.Store.Dir, "report.tmp")
+	if os.WriteFile(tmp, []byte(text), 0o600) != nil {
+		return
+	}
+	defer os.Remove(tmp)
+	name := "Selva Sync report " + month + ".txt"
+	existing, _ := e.Drive.FindChild(ctx, compID, name, false)
+	sp := drive.UploadSpec{ParentID: compID, Name: name, Path: tmp, Size: int64(len(text)), ModTime: time.Now()}
+	if existing != nil {
+		sp.ExistingID = existing.ID
+	}
+	if _, err := e.Drive.Upload(ctx, sp); err == nil {
+		e.commit(func() { e.state.ReportDone[month] = true })
+		e.Log.Info("report_written", map[string]string{"name": name})
+	}
 }
 
 func levelFor(result string) string {
@@ -613,7 +735,7 @@ func (e *Engine) notify(sum config.RunSummary, set config.Settings) {
 		e.Hooks.Notify("notify_cap", args)
 	case "failed":
 		streak := e.FailStreak()
-		if sum.Reason == "signin" || sum.Reason == "drive_full" {
+		if sum.Reason == "signin" || sum.Reason == "drive_full" || sum.Reason == "location_missing" || sum.Reason == "location_inside" {
 			if streak > 1 {
 				return // already told the user about this problem
 			}
@@ -628,6 +750,8 @@ func (e *Engine) notify(sum config.RunSummary, set config.Settings) {
 			e.Hooks.Notify("notify_signin", args)
 		case "drive_full":
 			e.Hooks.Notify("notify_full", args)
+		case "location_missing", "location_inside":
+			e.Hooks.Notify("notify_location", args)
 		default:
 			e.Hooks.Notify("notify_failed", args)
 		}
@@ -645,6 +769,12 @@ func (e *Engine) fail(sum *config.RunSummary, err error) {
 	case drive.IsQuota(err):
 		sum.Result, sum.Reason = "failed", "drive_full"
 		e.Log.Error("drive_full", nil)
+	case errors.Is(err, ErrLocation):
+		sum.Result, sum.Reason = "failed", "location_missing"
+		e.Log.Error("location_missing", nil)
+	case errors.Is(err, ErrLocationInside):
+		sum.Result, sum.Reason = "failed", "location_inside"
+		e.Log.Error("location_inside", nil)
 	default:
 		sum.Result, sum.Reason = "failed", "network"
 		e.Log.Error("error", map[string]string{"error": shortErr(err)})
@@ -687,6 +817,9 @@ func (e *Engine) networkBlocked(ctx context.Context, set config.Settings) string
 			}
 		}
 	}
+	if set.OnlyOnAC && e.Hooks.OnBattery != nil && e.Hooks.OnBattery() {
+		return "on_battery"
+	}
 	if ctx.Err() != nil {
 		return ""
 	}
@@ -699,10 +832,40 @@ func (e *Engine) networkBlocked(ctx context.Context, set config.Settings) string
 // ---------- Drive folders ----------
 
 func (e *Engine) ensureRoot(ctx context.Context, set config.Settings) error {
+	// The whole backup lives in ONE folder. If the user chose a folder (in
+	// My Drive or a shared drive), use only that one; a different folder
+	// means starting fresh there.
+	loc := set.Location.FolderID
+	e.Drive.SetSharedDrive(set.Location.DriveID)
 	e.smu.Lock()
+	if e.state.LocationID != loc {
+		e.state.ResetForLocation()
+		e.state.LocationID = loc
+		e.dirty.Store(true)
+	}
 	rootID, compID := e.state.RootID, e.state.ComputerID
 	appliedRoot, appliedComp := e.state.AppliedRoot, e.state.AppliedComputer
 	e.smu.Unlock()
+
+	if loc != "" {
+		f, err := e.Drive.Get(ctx, loc)
+		if drive.IsNotFound(err) || drive.IsForbidden(err) || err == nil && (f.Trashed || !f.IsFolder() ||
+			f.Capabilities != nil && !f.Capabilities.CanAddChildren) {
+			// never fall back to another place: stop and tell the user
+			return ErrLocation
+		}
+		if err != nil {
+			return err
+		}
+		if err := e.checkNotInsideBackup(ctx, f); err != nil {
+			return err
+		}
+		rootID, appliedRoot = loc, set.DriveFolderName
+		if !e.commit(func() { e.state.RootID, e.state.AppliedRoot = rootID, appliedRoot }) {
+			return errStale
+		}
+		return e.ensureComputer(ctx, set, rootID, compID, appliedComp)
+	}
 
 	// main "Selva Sync" folder
 	if rootID != "" {
@@ -737,14 +900,74 @@ func (e *Engine) ensureRoot(ctx context.Context, set config.Settings) error {
 	if !e.commit(func() { e.state.RootID, e.state.AppliedRoot = rootID, appliedRoot }) {
 		return errStale
 	}
+	return e.ensureComputer(ctx, set, rootID, compID, appliedComp)
+}
 
+func hasParent(f *drive.File, id string) bool {
+	for _, p := range f.Parents {
+		if p == id {
+			return true
+		}
+	}
+	return false
+}
+
+// checkNotInsideBackup refuses a chosen folder that is (inside) a computer
+// folder made by Selva Sync: the owner PC would archive it as "deleted".
+func (e *Engine) checkNotInsideBackup(ctx context.Context, f *drive.File) error {
+	cur := f
+	for depth := 0; depth < 30 && cur != nil; depth++ {
+		if cur.AppProperties["selvasync"] == "computer" {
+			return ErrLocationInside
+		}
+		if len(cur.Parents) == 0 {
+			return nil
+		}
+		next, err := e.Drive.Get(ctx, cur.Parents[0])
+		if drive.IsNotFound(err) || drive.IsForbidden(err) {
+			return nil // not made by Selva Sync (it could not be seen otherwise)
+		}
+		if err != nil {
+			return err
+		}
+		cur = next
+	}
+	return nil
+}
+
+// CheckLocation tells whether a folder can be used as the backup folder:
+// nil, ErrLocation or ErrLocationInside (or a network error).
+func (e *Engine) CheckLocation(ctx context.Context, f *drive.File) error {
+	if f.Trashed || !f.IsFolder() || f.Capabilities != nil && !f.Capabilities.CanAddChildren {
+		return ErrLocation
+	}
+	return e.checkNotInsideBackup(ctx, f)
+}
+
+// AlertTimes returns the times the overdue reminder is based on.
+func (e *Engine) AlertTimes() (lastSuccess, lastPartial, firstAttempt time.Time) {
+	e.smu.Lock()
+	defer e.smu.Unlock()
+	lastPartial = e.state.LastPartial
+	if lr := e.state.LastRun; lr != nil && (lr.Result == "partial" || lr.Result == "cap") && lr.Uploaded+lr.Updated > 0 && lr.Start.After(lastPartial) {
+		lastPartial = lr.Start
+	}
+	return e.state.LastSuccess, lastPartial, e.state.FirstAttempt
+}
+
+// ensureComputer finds or creates this computer's folder inside rootID.
+func (e *Engine) ensureComputer(ctx context.Context, set config.Settings, rootID, compID, appliedComp string) error {
+	e.smu.Lock()
+	appliedRoot := e.state.AppliedRoot
+	e.smu.Unlock()
 	// This computer's folder is found by its tags, never by name alone, so
 	// two PCs with the same name never share (and archive) each other's files.
 	if compID != "" {
 		f, err := e.Drive.Get(ctx, compID)
-		if drive.IsNotFound(err) || err == nil && f.Trashed {
+		// gone, or moved out of the backup folder (never write outside it)
+		if drive.IsNotFound(err) || err == nil && (f.Trashed || !hasParent(f, rootID)) {
 			e.smu.Lock()
-			e.state.ResetRemote()
+			e.state.ResetForLocation()
 			e.state.RootID, e.state.AppliedRoot = rootID, appliedRoot
 			e.smu.Unlock()
 			compID, appliedComp = "", ""
@@ -858,7 +1081,11 @@ func (e *Engine) ensureRoot(ctx context.Context, set config.Settings) error {
 		}) {
 			return errStale
 		}
-		e.Log.Info("folder_ready", map[string]string{"path": set.DriveFolderName + "/" + set.ComputerName})
+		base := set.DriveFolderName
+		if set.Location.FolderID != "" {
+			base = set.Location.Name
+		}
+		e.Log.Info("folder_ready", map[string]string{"path": base + "/" + set.ComputerName})
 	}
 	if appliedComp != set.ComputerName {
 		if err := e.Drive.Rename(ctx, compID, set.ComputerName); err == nil {
@@ -1088,9 +1315,12 @@ func (e *Engine) reindexPass(ctx context.Context, allowRelocate bool, trustAfter
 	compID := e.state.ComputerID
 	oldFileKey := make(map[string]string, len(e.state.Files))
 	oldSeen := make(map[string]bool, len(e.state.Files))
+	for id := range e.state.KeptSeen {
+		oldSeen[id] = true
+	}
 	for k, fe := range e.state.Files {
 		oldFileKey[fe.ID] = k
-		oldSeen[fe.ID] = fe.Seen
+		oldSeen[fe.ID] = oldSeen[fe.ID] || fe.Seen
 	}
 	oldFolderKey := make(map[string]string, len(e.state.Folders))
 	for k, id := range e.state.Folders {
@@ -1861,7 +2091,16 @@ func (e *Engine) execute(ctx context.Context, set config.Settings, plan []*item,
 	}()
 	defer close(saverDone)
 
+	var midBlock atomic.Value // reason the run had to stop (e.g. unplugged)
+	// stop only when the laptop is unplugged DURING the run ("Sync anyway"
+	// on battery keeps going)
+	startedOnAC := set.OnlyOnAC && e.Hooks.OnBattery != nil && !e.Hooks.OnBattery()
 	handle := func(it *item) {
+		if startedOnAC && e.Hooks.OnBattery() {
+			midBlock.Store("on_battery")
+			cancel()
+			return
+		}
 		e.mu.Lock()
 		e.status.Current = it.key
 		e.mu.Unlock()
@@ -1939,6 +2178,11 @@ func (e *Engine) execute(ctx context.Context, set config.Settings, plan []*item,
 				name = it.key
 			}
 			e.Log.Warn("failed", map[string]string{"path": name, "error": shortErr(err)})
+			e.runErrMu.Lock()
+			if len(e.runErrs) < 50 {
+				e.runErrs = append(e.runErrs, time.Now().Format("2006-01-02 15:04")+"  "+name+": "+shortErr(err))
+			}
+			e.runErrMu.Unlock()
 		}
 	}
 
@@ -1978,6 +2222,9 @@ feed:
 		e.fail(sum, fatal)
 	case ctx.Err() != nil:
 		sum.Result = "stopped"
+	case midBlock.Load() != nil:
+		sum.Result, sum.Reason = "blocked", midBlock.Load().(string)
+		e.Log.Info("blocked", map[string]string{"reason": sum.Reason})
 	}
 	e.saveState()
 }
@@ -2310,7 +2557,12 @@ func (e *Engine) trimArchive(ctx context.Context, set config.Settings) {
 		if created.IsZero() || !created.Before(cutoff) {
 			continue
 		}
-		if err := e.Drive.Delete(ctx, k.ID); err == nil || drive.IsNotFound(err) {
+		err := e.Drive.Delete(ctx, k.ID)
+		if drive.IsForbidden(err) {
+			// shared drive members who may not delete permanently: use the trash
+			err = e.Drive.Trash(ctx, k.ID)
+		}
+		if err == nil || drive.IsNotFound(err) {
 			e.Log.Info("archive_trimmed", map[string]string{"name": k.Name})
 			e.smu.Lock()
 			for fk := range e.state.Folders {

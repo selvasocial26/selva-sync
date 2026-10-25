@@ -53,6 +53,12 @@ var english = map[string]string{
 	"settings_saved":      "Settings saved",
 	"signed_in":           "Signed in as {email}",
 	"signed_out":          "Signed out",
+	"location_inside":     "The chosen Google Drive folder is inside a Selva Sync backup folder. Nothing was uploaded. Choose a different folder.",
+	"location_granted":    "Access given to the organisation's backup folder: {name}",
+	"setup_problem":       "The office setup file (selvasync-setup.json) has mistakes. Not used: {keys}",
+	"location_set":        "Backup folder: {name}",
+	"location_missing":    "The chosen Google Drive backup folder is missing or you no longer have access to it. Nothing was uploaded. Choose the folder again.",
+	"report_written":      "Monthly report saved on Drive: {name}",
 }
 
 // PruneOld deletes monthly log files older than about a year.
