@@ -6,6 +6,7 @@ package config
 import (
 	"encoding/json"
 	"errors"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -56,6 +57,22 @@ type Settings struct {
 	Parallel         int      `json:"parallel"`
 	ClientID         string   `json:"clientId,omitempty"`
 	ClientSecret     string   `json:"clientSecret,omitempty"`
+	// Location is the one Google Drive folder that holds the whole backup.
+	// Empty FolderID = default "Selva Sync" folder in My Drive.
+	Location  Location `json:"location"`
+	PickerURL string   `json:"pickerUrl,omitempty"` // web page with Google's folder chooser
+	AlertDays int      `json:"alertDays"`           // warn after this many days without a successful backup (0 = off)
+	OnlyOnAC  bool     `json:"onlyOnAC"`            // laptops: sync only while plugged in
+	Reports   bool     `json:"reports"`             // write a monthly report file into the backup folder
+	// Managed lists settings fixed by the organisation's setup file.
+	Managed []string `json:"managed,omitempty"`
+}
+
+// Location is a folder in My Drive or in a shared drive.
+type Location struct {
+	FolderID string `json:"folderId,omitempty"`
+	Name     string `json:"name,omitempty"`
+	DriveID  string `json:"driveId,omitempty"` // shared drive ID, empty for My Drive
 }
 
 // DefaultExcludes skips files that are temporary, rebuilt automatically or
@@ -119,6 +136,8 @@ func Defaults() Settings {
 		ArchiveDays:      90,
 		Notifications:    true,
 		Parallel:         3,
+		AlertDays:        3,
+		Reports:          true,
 	}
 }
 
@@ -196,6 +215,19 @@ func validWinPath(rest string) bool {
 			base = base[:i]
 		}
 		if reserved[strings.TrimSpace(base)] {
+			return false
+		}
+	}
+	return true
+}
+
+// validDriveID accepts Google Drive IDs (letters, digits, - and _).
+func validDriveID(id string) bool {
+	if id == "" || len(id) > 200 {
+		return id == ""
+	}
+	for _, r := range id {
+		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-' || r == '_') {
 			return false
 		}
 	}
@@ -284,6 +316,23 @@ func (s *Settings) Normalize() {
 	s.Excludes = migrateExcludes(cleanList(s.Excludes, 1000))
 	s.ClientID = strings.TrimSpace(s.ClientID)
 	s.ClientSecret = strings.TrimSpace(s.ClientSecret)
+	s.AlertDays = clamp(s.AlertDays, 0, 365)
+	s.Location.FolderID = strings.TrimSpace(s.Location.FolderID)
+	if !validDriveID(s.Location.FolderID) {
+		s.Location = Location{}
+	}
+	if !validDriveID(s.Location.DriveID) {
+		s.Location.DriveID = ""
+	}
+	if r := []rune(s.Location.Name); len(r) > 200 {
+		s.Location.Name = string(r[:200])
+	}
+	s.PickerURL = strings.TrimSpace(s.PickerURL)
+	if pu, err := url.Parse(s.PickerURL); err != nil || pu.Scheme != "https" || pu.Host == "" || pu.User != nil ||
+		len(s.PickerURL) > 500 || strings.ContainsAny(s.PickerURL, " \t\r\n\"'<>\\") {
+		s.PickerURL = ""
+	}
+	s.Managed = cleanList(s.Managed, 50)
 }
 
 func migrateExcludes(in []string) []string {
@@ -416,6 +465,29 @@ type State struct {
 	AppliedComputer string                   `json:"appliedComputer"`
 	SourceVolumes   map[string]string        `json:"sourceVolumes"`
 	FailStreak      int                      `json:"failStreak"`
+	Monthly         map[string]*MonthStats   `json:"monthly,omitempty"`
+	ReportDone      map[string]bool          `json:"reportDone,omitempty"`
+	LastAlert       time.Time                `json:"lastAlert"`
+	// KeptSeen remembers which Drive files were seen on this PC before the
+	// backup folder was changed, so going back to a folder keeps working.
+	KeptSeen     map[string]bool `json:"keptSeen,omitempty"`
+	FirstAttempt time.Time       `json:"firstAttempt"`         // first real sync attempt (for the overdue reminder)
+	LastPartial  time.Time       `json:"lastPartial"`          // last run that backed up files but had some problems
+	LocationID   string          `json:"locationId,omitempty"` // backup location the remote IDs belong to
+}
+
+// MonthStats are totals for the monthly report.
+type MonthStats struct {
+	Runs     int      `json:"runs"`
+	OK       int      `json:"ok"`
+	Problems int      `json:"problems"`
+	Failed   int      `json:"failed"`
+	Uploaded int      `json:"uploaded"`
+	Updated  int      `json:"updated"`
+	Moved    int      `json:"moved"`
+	Archived int      `json:"archived"`
+	Bytes    int64    `json:"bytes"`
+	Errors   []string `json:"errors,omitempty"` // up to 50 recent problems
 }
 
 // NewState returns an empty state.
@@ -447,6 +519,29 @@ func (st *State) fill() {
 	if st.VersionDone == nil {
 		st.VersionDone = map[string]int64{}
 	}
+	if st.Monthly == nil {
+		st.Monthly = map[string]*MonthStats{}
+	}
+	if st.ReportDone == nil {
+		st.ReportDone = map[string]bool{}
+	}
+	if st.KeptSeen == nil {
+		st.KeptSeen = map[string]bool{}
+	}
+}
+
+// ResetForLocation forgets the Drive side when the backup folder changes,
+// but remembers which Drive files were seen on this PC.
+func (st *State) ResetForLocation() {
+	if st.KeptSeen == nil || len(st.KeptSeen) > 500000 {
+		st.KeptSeen = map[string]bool{}
+	}
+	for _, fe := range st.Files {
+		if fe.Seen && fe.ID != "" {
+			st.KeptSeen[fe.ID] = true
+		}
+	}
+	st.ResetRemote()
 }
 
 // ResetRemote forgets everything about Drive (used when the Drive folder was
