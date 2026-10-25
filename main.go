@@ -23,6 +23,9 @@ import (
 //go:embed assets/selvasync.ico
 var iconICO []byte
 
+//go:embed assets/selvasync-alert.ico
+var alertICO []byte
+
 func init() {
 	// The Windows tray icon needs the main goroutine to stay on one OS thread.
 	runtime.LockOSThread()
@@ -98,6 +101,7 @@ func main() {
 		println("Selva Sync window:", a.URL())
 	}
 	a.QuitHook = func() { platform.Current().Quit() }
+	app.AlertIcon, app.NormalIcon = alertICO, iconICO
 	platform.RunTray(a.TrayConfig(iconICO, !*background))
 	a.Shutdown()
 }

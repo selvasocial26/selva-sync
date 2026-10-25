@@ -20,9 +20,12 @@ Google Drive for Desktop is convenient, but it keeps a local cache, syncs whenev
 | Duplicates | **Never.** Changed files replace their Drive copy, which keeps Google's version history. |
 | Renamed / moved files | Moved or renamed **on Drive too, without uploading again** (contents are checked first). |
 | Folders | Any folders or whole drives: C:, D:, USB and network drives. |
+| Where on Drive | **One folder you choose**, in My Drive or a **shared drive**. Never anywhere else. |
 | When | **Your schedule**: daily, weekly, every N hours, at startup or manual only. Missed runs catch up. |
 | Internet use | Day and night **speed limits**, a **monthly data cap**, pause on **metered/mobile** connections, Wi-Fi allow/block lists. |
 | Deleted files | Moved to a dated **Archive** folder on Drive and deleted permanently after the number of days you choose (default 90). Or keep them, or trash them: your choice. |
+| Peace of mind | Red tray icon and a reminder if there has been no backup for a few days, a monthly report on Drive, size estimate before the first backup, and an *only when charging* option for laptops. |
+| Offices | An **office setup file** gives every PC the same settings and can lock the ones staff shouldn't change. |
 | Languages | English, हिन्दी, ગુજરાતી, मराठी, தமிழ், বাংলা, Español, Français, Português. **Anyone can add more.** |
 | Privacy | Only your computer and your Google Drive are involved. No servers, no accounts, no analytics. |
 
@@ -60,6 +63,8 @@ My Drive/
         └── ...
 ```
 
+`Selva Sync` is the default. You can choose any other folder instead, also in a shared drive (for example `Shared drives / Office / PC Backups / OFFICE-PC / ...`); the layout inside it is the same. Each PC also gets a small monthly report file in its folder.
+
 Several computers can safely share one Google account. Each one is identified by an anonymous machine tag, so even two PCs with the same name never mix their files.
 
 ## Privacy and security
@@ -91,7 +96,7 @@ When you have the `google-client.json` file, you can either:
 
 ## Tested hard
 
-Version 1.1 went through three rounds of "try to break it" testing (data safety, security, Windows behaviour). Every problem found has an automated test, and the test suite also runs as a Windows program. See [CHANGELOG.md](CHANGELOG.md).
+Versions 1.1 and 1.2 went through four rounds of "try to break it" testing (data safety, security, Windows behaviour). Every problem found has an automated test, and the test suite also runs as a Windows program. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Contributing
 
