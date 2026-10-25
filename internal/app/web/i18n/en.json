@@ -422,5 +422,13 @@
   "log_location_inside": "The chosen Google Drive folder is inside a Selva Sync backup folder. Nothing was uploaded. Choose a different folder.",
   "log_location_granted": "Access given to the organisation's backup folder: {name}",
   "log_setup_problem": "The office setup file (selvasync-setup.json) has mistakes. Not used: {keys}",
-  "setup_problem": "The office setup file has settings that could not be read and were not used: {keys}"
+  "setup_problem": "The office setup file has settings that could not be read and were not used: {keys}",
+  "btn_whole_pc": "Back up whole computer",
+  "whole_pc_hint": "Adds every internal drive (C:, D:...) in one click. Windows, programs and temporary files are skipped automatically.",
+  "whole_pc_title": "Back up the whole computer?",
+  "whole_pc_d": "These drives will be backed up: {drives}. Windows, Program Files, ProgramData, AppData, the Recycle Bin and temporary files are skipped automatically. Folders you added inside these drives are replaced by the whole drive (no duplicates). A whole computer can be large: the size and your free Google Drive space are shown before anything is uploaded.",
+  "whole_pc_added": "Added {drives}. Check the size before the first sync.",
+  "whole_pc_none": "No internal drives were found.",
+  "cloud_files": "Also back up OneDrive files that are only online",
+  "cloud_files_d": "Files with the cloud icon are downloaded one at a time for the backup and made online-only again right after, so no disk space stays in use. This uses internet data for the download as well as the upload."
 }

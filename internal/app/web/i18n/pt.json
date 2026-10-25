@@ -422,5 +422,13 @@
   "log_location_inside": "A pasta do Google Drive escolhida está dentro de uma pasta de backup do Selva Sync. Nada foi enviado. Escolha outra pasta.",
   "log_location_granted": "Acesso concedido à pasta de backup da organização: {name}",
   "log_setup_problem": "O arquivo de configuração do escritório (selvasync-setup.json) tem erros. Não usado: {keys}",
-  "setup_problem": "O arquivo de configuração do escritório tem configurações que não puderam ser lidas e não foram usadas: {keys}"
+  "setup_problem": "O arquivo de configuração do escritório tem configurações que não puderam ser lidas e não foram usadas: {keys}",
+  "btn_whole_pc": "Fazer backup do computador inteiro",
+  "whole_pc_hint": "Adiciona todas as unidades internas (C:, D:...) com um clique. Windows, programas e arquivos temporários são ignorados automaticamente.",
+  "whole_pc_title": "Fazer backup do computador inteiro?",
+  "whole_pc_d": "Estas unidades terão backup: {drives}. Windows, Program Files, ProgramData, AppData, a Lixeira e arquivos temporários são ignorados automaticamente. Pastas adicionadas dentro dessas unidades são substituídas pela unidade inteira (sem duplicados). Um computador inteiro pode ser grande: o tamanho e o espaço livre do Google Drive aparecem antes de qualquer envio.",
+  "whole_pc_added": "{drives} adicionado. Confira o tamanho antes da primeira sincronização.",
+  "whole_pc_none": "Nenhuma unidade interna encontrada.",
+  "cloud_files": "Fazer backup também dos arquivos do OneDrive que estão só online",
+  "cloud_files_d": "Arquivos com o ícone de nuvem são baixados um por vez para o backup e voltam a ficar só online logo depois, sem ocupar espaço em disco. Usa dados de internet para o download e para o envio."
 }

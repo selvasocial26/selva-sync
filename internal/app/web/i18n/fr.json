@@ -422,5 +422,13 @@
   "log_location_inside": "Le dossier Google Drive choisi se trouve dans un dossier de sauvegarde Selva Sync. Rien n'a été envoyé. Choisissez un autre dossier.",
   "log_location_granted": "Accès donné au dossier de sauvegarde de l'organisation : {name}",
   "log_setup_problem": "Le fichier de configuration de bureau (selvasync-setup.json) contient des erreurs. Non utilisé : {keys}",
-  "setup_problem": "Le fichier de configuration de bureau contient des réglages illisibles qui n'ont pas été utilisés : {keys}"
+  "setup_problem": "Le fichier de configuration de bureau contient des réglages illisibles qui n'ont pas été utilisés : {keys}",
+  "btn_whole_pc": "Sauvegarder tout l'ordinateur",
+  "whole_pc_hint": "Ajoute tous les disques internes (C:, D:...) en un clic. Windows, les programmes et les fichiers temporaires sont ignorés automatiquement.",
+  "whole_pc_title": "Sauvegarder tout l'ordinateur ?",
+  "whole_pc_d": "Ces disques seront sauvegardés : {drives}. Windows, Program Files, ProgramData, AppData, la Corbeille et les fichiers temporaires sont ignorés automatiquement. Les dossiers ajoutés dans ces disques sont remplacés par le disque entier (pas de doublons). Un ordinateur entier peut être volumineux : la taille et l'espace libre de Google Drive s'affichent avant tout envoi.",
+  "whole_pc_added": "{drives} ajouté. Vérifiez la taille avant la première synchronisation.",
+  "whole_pc_none": "Aucun disque interne trouvé.",
+  "cloud_files": "Sauvegarder aussi les fichiers OneDrive disponibles uniquement en ligne",
+  "cloud_files_d": "Les fichiers avec l'icône de nuage sont téléchargés un par un pour la sauvegarde, puis remis en ligne uniquement juste après : aucun espace disque n'est occupé. Cela utilise des données internet pour le téléchargement et l'envoi."
 }

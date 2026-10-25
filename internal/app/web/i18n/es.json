@@ -422,5 +422,13 @@
   "log_location_inside": "La carpeta de Google Drive elegida está dentro de una carpeta de copia de Selva Sync. No se subió nada. Elige otra carpeta.",
   "log_location_granted": "Acceso concedido a la carpeta de copia de la organización: {name}",
   "log_setup_problem": "El archivo de configuración de oficina (selvasync-setup.json) tiene errores. No se usó: {keys}",
-  "setup_problem": "El archivo de configuración de oficina tiene ajustes que no se pudieron leer y no se usaron: {keys}"
+  "setup_problem": "El archivo de configuración de oficina tiene ajustes que no se pudieron leer y no se usaron: {keys}",
+  "btn_whole_pc": "Copiar todo el ordenador",
+  "whole_pc_hint": "Añade todas las unidades internas (C:, D:...) con un clic. Windows, los programas y los archivos temporales se omiten automáticamente.",
+  "whole_pc_title": "¿Copiar todo el ordenador?",
+  "whole_pc_d": "Se copiarán estas unidades: {drives}. Windows, Program Files, ProgramData, AppData, la Papelera y los archivos temporales se omiten automáticamente. Las carpetas que añadiste dentro de estas unidades se sustituyen por la unidad completa (sin duplicados). Un ordenador completo puede ocupar mucho: verás el tamaño y el espacio libre de Google Drive antes de subir nada.",
+  "whole_pc_added": "Se añadió {drives}. Revisa el tamaño antes de la primera sincronización.",
+  "whole_pc_none": "No se encontraron unidades internas.",
+  "cloud_files": "Copiar también los archivos de OneDrive que solo están en línea",
+  "cloud_files_d": "Los archivos con el icono de nube se descargan uno a uno para la copia y vuelven a quedar solo en línea justo después, así que no ocupan espacio en disco. Usa datos de internet para la descarga y para la subida."
 }
