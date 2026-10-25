@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -47,7 +48,20 @@ type Client struct {
 	timeMu     sync.Mutex
 	serverTime time.Time // Google's clock from the last response
 	seenAt     time.Time // our clock when it was seen
+
+	driveID atomic.Value // shared drive searched by List ("" = My Drive)
 }
+
+// SetSharedDrive makes searches look in this shared drive ("" = My Drive).
+func (c *Client) SetSharedDrive(id string) { c.driveID.Store(id) }
+
+func (c *Client) sharedDrive() string {
+	s, _ := c.driveID.Load().(string)
+	return s
+}
+
+// ErrIncomplete means Google answered a search with only part of the results.
+var ErrIncomplete = errors.New("Google Drive returned incomplete search results")
 
 // ServerNow estimates the current time using Google's clock, so a wrong PC
 // clock cannot make old archives look expired. Falls back to the PC clock.
@@ -131,6 +145,10 @@ type File struct {
 	AppProperties map[string]string `json:"appProperties,omitempty"`
 	MD5           string            `json:"md5Checksum,omitempty"`
 	CreatedTime   string            `json:"createdTime,omitempty"`
+	DriveID       string            `json:"driveId,omitempty"`
+	Capabilities  *struct {
+		CanAddChildren bool `json:"canAddChildren"`
+	} `json:"capabilities,omitempty"`
 }
 
 // Created returns when Drive created the file (Google's clock, not the PC's).
@@ -151,7 +169,7 @@ func (f File) ModTimeMs() int64 {
 	return t.UnixMilli()
 }
 
-const fileFields = "id,name,mimeType,parents,size,modifiedTime,trashed,appProperties,md5Checksum,createdTime"
+const fileFields = "id,name,mimeType,parents,size,modifiedTime,trashed,appProperties,md5Checksum,createdTime,driveId,capabilities/canAddChildren"
 
 // APIError is returned for non-success HTTP responses.
 type APIError struct {
@@ -168,6 +186,14 @@ func (e *APIError) Error() string {
 func IsNotFound(err error) bool {
 	var ae *APIError
 	return errors.As(err, &ae) && ae.Status == 404
+}
+
+// IsForbidden reports missing permission (e.g. access to a shared drive
+// was removed), but not rate limits or a full Drive.
+func IsForbidden(err error) bool {
+	var ae *APIError
+	return errors.As(err, &ae) && ae.Status == 403 && !IsQuota(err) &&
+		ae.Reason != "rateLimitExceeded" && ae.Reason != "userRateLimitExceeded"
 }
 
 // IsAuth reports an authentication problem (user must sign in again).
@@ -269,7 +295,24 @@ func (c *Client) request(ctx context.Context, method, u string, body func() (io.
 	return nil, lastErr
 }
 
+// allDrives adds the parameters that let every files request work in
+// shared drives as well as My Drive.
+func allDrives(u string) string {
+	if !strings.Contains(u, "/files") || strings.Contains(u, "/generateIds") || strings.Contains(u, "supportsAllDrives") {
+		return u
+	}
+	sep := "?"
+	if strings.Contains(u, "?") {
+		sep = "&"
+	}
+	u += sep + "supportsAllDrives=true"
+	return u
+}
+
 func (c *Client) once(ctx context.Context, method, u string, body func() (io.Reader, string), headers map[string]string, out any) (*http.Response, error) {
+	if strings.HasPrefix(u, c.APIBase) || strings.HasPrefix(u, c.UploadBase) {
+		u = allDrives(u)
+	}
 	var r io.Reader
 	ct := ""
 	if body != nil {
@@ -333,15 +376,26 @@ func (c *Client) List(ctx context.Context, q string) ([]File, error) {
 		v.Set("fields", "nextPageToken,files("+fileFields+")")
 		v.Set("pageSize", "1000")
 		v.Set("spaces", "drive")
+		v.Set("includeItemsFromAllDrives", "true")
+		if d := c.sharedDrive(); d != "" {
+			// search only the shared drive that holds the backup folder
+			v.Set("corpora", "drive")
+			v.Set("driveId", d)
+		}
 		if token != "" {
 			v.Set("pageToken", token)
 		}
 		var res struct {
-			NextPageToken string `json:"nextPageToken"`
-			Files         []File `json:"files"`
+			NextPageToken    string `json:"nextPageToken"`
+			Files            []File `json:"files"`
+			IncompleteSearch bool   `json:"incompleteSearch"`
 		}
 		if _, err := c.request(ctx, "GET", c.APIBase+"/files?"+v.Encode(), nil, nil, &res); err != nil {
 			return nil, err
+		}
+		if res.IncompleteSearch {
+			// acting on a partial list could upload duplicates: try later
+			return nil, ErrIncomplete
 		}
 		all = append(all, res.Files...)
 		if res.NextPageToken == "" {
