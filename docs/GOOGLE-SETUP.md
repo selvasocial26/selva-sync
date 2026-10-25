@@ -29,7 +29,7 @@ Time needed: about 15 minutes. Cost: free. No credit card is needed for this.
    - **Contact email:** your email
 3. Agree to the policy and click **Create**.
 4. Under **Branding**, add the home page, privacy policy and terms links from the Selva Sync website, and add your site's domain under **Authorized domains**. The ready-made pages and how to put them online for free are in [PUBLISH-WEBSITE.md](PUBLISH-WEBSITE.md).
-   *Don't upload a logo for now. Adding a logo makes Google require a brand review.*
+   *Logo (optional): upload `assets/selvasync-logo-120.png` (square, 120×120). Adding a logo makes Google review your branding before the logo is shown. Do it once the website is online and your domain is verified.*
 
 ## Step 4: Allow only the minimum permission
 
@@ -74,6 +74,44 @@ See [BUILDING.md](BUILDING.md). With GitHub, add `GOOGLE_CLIENT_ID` and `GOOGLE_
 ### Is it safe to share the Client ID and secret?
 
 Yes, for a *Desktop app* client. Google treats desktop client secrets as **not confidential**, because they are always inside the program anyway. They identify the app, not a person. They do **not** give anyone access to your Drive or anyone else's. Each user still signs in with their own account and approves access. Keep the Google Cloud **project** itself private.
+
+---
+
+## Optional: let users choose the backup folder (My Drive or shared drive)
+
+Without this, every PC backs up into *My Drive › Selva Sync*. With it, users get a **Choose folder in Google Drive** button (Safety page) that opens Google's own folder chooser, including **shared drives**. It takes about 10 minutes more and stays free.
+
+Why a web page is needed: Selva Sync only has Google's *per-file* permission (`drive.file`), so it cannot list your folders. Google's folder chooser ("Google Picker") runs on a web page and lets the user hand one folder to Selva Sync. The page is already in the website (`docs/picker.html`). You only fill in three values.
+
+Do this **in the same Google Cloud project** as the steps above (that is how the folder chosen on the web page becomes usable by the desktop app).
+
+1. **Put the website online first** ([PUBLISH-WEBSITE.md](PUBLISH-WEBSITE.md)). Your folder chooser address will be `https://USERNAME.github.io/selva-sync/picker.html`.
+2. **Turn on the Google Picker API:** ☰ → APIs & Services → Library → search **Google Picker API** → **Enable**.
+3. **Create an API key:** APIs & Services → Credentials → **Create credentials → API key**. Then click the key to edit it:
+   - *Application restrictions:* **Websites**, add `https://USERNAME.github.io/*`
+   - *API restrictions:* **Restrict key** → tick **Google Picker API** → **Save**.
+4. **Create a web client:** Clients (or Credentials) → **Create client** → Application type **Web application**, name `Selva Sync folder chooser`. Under **Authorized JavaScript origins** add `https://USERNAME.github.io` (no slash at the end, no path). Leave redirect URIs empty. Click **Create** and copy the **Client ID**.
+5. **Find the project number:** ☰ → **Cloud overview → Dashboard** (or the project selector → project settings). Copy the **Project number** (digits only).
+6. **Fill in the page settings:** on GitHub, open `docs/picker-config.js` → pencil icon, paste the three values, and click **Commit changes**:
+   ```js
+   window.SELVA_PICKER = {
+     clientId: "1234-abc.apps.googleusercontent.com",
+     apiKey: "AIza...",
+     appId: "123456789012"
+   };
+   ```
+   None of these values are secret (they only work from your website, and every user still signs in with their own account).
+7. **Tell Selva Sync where the page is.** Choose one:
+   - **A. In `google-client.json`** (no rebuild): open the file in Notepad and add one line after the first `{`:
+     ```json
+     "selvasync_picker_url": "https://USERNAME.github.io/selva-sync/picker.html",
+     ```
+   - **B. In the build:** in GitHub, **Settings → Secrets and variables → Actions → Variables → New repository variable**, name `PICKER_URL`, value the address above. Or run `PICKER_URL=... ./build.sh`.
+   - **C. On one PC:** Selva Sync → Settings → Advanced → *Folder chooser page*.
+
+Test it: open Selva Sync → **Safety → Choose folder in Google Drive**, pick a folder, and check that the page says *Backup folder saved*.
+
+If the page says *Folder choosing is not set up*, step 6 is missing. If Google shows *origin_mismatch*, check the JavaScript origin in step 4. If Selva Sync says it *cannot open this folder*, the user signed in with a different Google account in the browser, or the web client is in a different Cloud project.
 
 ---
 

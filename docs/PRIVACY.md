@@ -9,10 +9,11 @@ Selva Sync is designed so that **nobody except you and Google ever handles your 
 - No servers of its own. The only internet addresses it contacts are Google's:
   - `accounts.google.com` and `oauth2.googleapis.com` for sign-in
   - `www.googleapis.com` for Google Drive
+- The optional folder chooser is a page on the publisher's website (`picker.html`). It runs in your browser, loads Google's sign-in and Picker scripts, and sends only the chosen folder's ID back to Selva Sync on `127.0.0.1`. It stores nothing.
 
 ## Permission requested from Google
 
-Only **`https://www.googleapis.com/auth/drive.file`**. With this permission Google lets Selva Sync see and change **only the files and folders Selva Sync itself created**. It cannot list, read or delete anything else in your Drive.
+Only **`https://www.googleapis.com/auth/drive.file`**. With this permission Google lets Selva Sync see and change **only the files and folders Selva Sync itself created**. It cannot list, read or delete anything else in your Drive. The one exception is a backup folder **you** pick in Google's folder chooser: picking it gives Selva Sync access to that folder (and what it creates inside it). Selva Sync also reads the names and tags of the folders above it, only to refuse a folder inside another Selva Sync backup.
 
 ## Data stored on your computer
 
@@ -29,6 +30,7 @@ Everything is in `%APPDATA%\SelvaSync` (for example `C:\Users\<you>\AppData\Roam
 | `sync.lock` | Makes sure only one copy of Selva Sync syncs at a time |
 | `logs\*.log` | What was uploaded and when (kept on your PC only) |
 | `languages\` | Optional extra translations you add |
+| `selvasync-setup.json` | Optional office setup file placed by your organisation (next to `SelvaSync.exe`). Contains settings only, never personal data or Google credentials. |
 
 The program itself is in `%LOCALAPPDATA%\Programs\Selva Sync`.
 

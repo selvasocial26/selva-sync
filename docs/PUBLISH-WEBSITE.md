@@ -7,6 +7,7 @@ The `docs` folder contains a ready-made website:
 | Home page | `docs/index.html` | Google consent screen "Application home page" |
 | Privacy policy | `docs/privacy.html` | Google consent screen "Application privacy policy link" |
 | Terms of use | `docs/terms.html` | Google consent screen "Application terms of service link" (optional) |
+| Folder chooser | `docs/picker.html` (+ `picker-config.js`) | Lets users choose the backup folder, including shared drives (optional, see GOOGLE-SETUP.md) |
 
 The download and source-code buttons fill in their links automatically once the site is online, so nothing needs editing.
 

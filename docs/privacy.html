@@ -21,7 +21,7 @@
   <p class="meta">Selva Sync · Effective date: 25 October 2026</p>
 
   <div class="box">
-    <b>In short:</b> Selva Sync runs only on your computer. It sends your chosen files straight from your computer to <b>your own Google Drive</b>. It can only access the Drive files and folders it created itself. It has no servers, collects nothing about you, and shares nothing with anyone.
+    <b>In short:</b> Selva Sync runs only on your computer. It sends your chosen files straight from your computer to <b>your own Google Drive</b>. It can only access the Drive files and folders it created itself, plus a backup folder you choose yourself in Google's folder chooser. It has no servers, collects nothing about you, and shares nothing with anyone.
   </div>
 
   <p>Selva Sync ("the app") is a free, open-source Windows application created by Dr. Selvakumar Vellingiri ("we", "us"). This policy explains what information the app uses and how. It applies to the app downloaded from its official source code repository and its releases.</p>
@@ -29,13 +29,15 @@
   <h2>1. Information the app accesses from your Google account</h2>
   <p>When you click <b>Connect Google Drive</b>, Google asks you to allow the app one permission:</p>
   <ul>
-    <li><b>Google Drive, per-file access</b> (<code>https://www.googleapis.com/auth/drive.file</code>). The app can see, create, change and delete <b>only the files and folders it created itself</b> in your Google Drive. It cannot see, open or list any other file in your Drive.</li>
+    <li><b>Google Drive, per-file access</b> (<code>https://www.googleapis.com/auth/drive.file</code>). The app can see, create, change and delete <b>only the files and folders it created itself</b> in your Google Drive, and a folder <b>you</b> choose in Google's folder chooser as the backup folder (optional). It cannot see, open or list any other file in your Drive.</li>
   </ul>
+  <p>If you choose a backup folder, the app also reads that folder's name, its shared drive (if any), whether you may add files to it, and the names of the folders above it (only to make sure it is not inside another Selva Sync backup).</p>
   <p>Through this connection the app also reads your Google account's <b>email address and display name</b>, so it can show you which account is connected, and your <b>Drive storage usage and limit</b>, so it can warn you before your Drive is full. This information is only shown inside the app on your computer.</p>
 
   <h2>2. How the app uses this information</h2>
   <ul>
-    <li>To upload the files and folders <b>you select</b> from your computer to a "Selva Sync" folder in your own Google Drive, and to keep that copy up to date.</li>
+    <li>To upload the files and folders <b>you select</b> from your computer to a "Selva Sync" folder in your own Google Drive (or to the backup folder you chose, which may be in a shared drive), and to keep that copy up to date.</li>
+    <li>To save a short monthly report of your backups (numbers of files, data and problems) as a text file in that backup folder, if you keep this option on.</li>
     <li>To move files you delete on your computer into an archive folder in your Drive, and to remove archived files after the number of days you choose.</li>
     <li>To show your connected account, storage usage and sync status in the app.</li>
   </ul>
@@ -52,6 +54,9 @@
     <tr><td>Activity logs</td><td>So you can see what was uploaded and when. Logs older than about a year are deleted automatically.</td></tr>
     <tr><td>A random installation ID</td><td>To tell your computers apart on Drive when several PCs use one Google account.</td></tr>
   </table>
+
+  <h3>The folder chooser web page</h3>
+  <p>If you click <b>Choose folder in Google Drive</b>, your browser opens the page <code>picker.html</code> on this website. It loads Google's sign-in and Google Picker scripts, which are covered by <a href="https://policies.google.com/privacy" rel="noopener">Google's privacy policy</a>. The page itself stores nothing and sends nothing to us. It only passes the chosen folder's ID back to Selva Sync on your own computer (address <code>127.0.0.1</code>). The details it needs are placed after the <code>#</code> in the address, so they are not sent to the web server.</p>
 
   <h2>4. Sharing</h2>
   <p>We do not share, sell, rent or transfer your information to anyone. The only external service the app talks to is Google (sign-in and Google Drive), and only on your behalf. The app contains no analytics, tracking, advertising or crash-reporting code.</p>
