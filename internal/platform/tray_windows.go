@@ -189,6 +189,27 @@ func (t *Tray) SetTooltip(s string) {
 	procShellNotifyIconW.Call(nimModify, uintptr(unsafe.Pointer(d)))
 }
 
+// SetIcon changes the tray icon (e.g. to a warning version).
+func (t *Tray) SetIcon(ico []byte) {
+	if t == nil {
+		return
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	sz, _, _ := procGetSystemMetrics.Call(49)
+	if sz == 0 {
+		sz = 16
+	}
+	h := iconFromICO(ico, int(sz))
+	if h == 0 {
+		return
+	}
+	t.icon = h
+	d := t.nid()
+	d.Flags = nifIcon
+	procShellNotifyIconW.Call(nimModify, uintptr(unsafe.Pointer(d)))
+}
+
 // Notify shows a Windows notification from the tray icon.
 func (t *Tray) Notify(title, text string) {
 	if t == nil {

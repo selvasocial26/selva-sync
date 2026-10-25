@@ -54,6 +54,7 @@ type Tray struct{ quit chan struct{} }
 var theTray *Tray
 
 func (t *Tray) SetTooltip(s string)       {}
+func (t *Tray) SetIcon(ico []byte)        {}
 func (t *Tray) Notify(title, text string) { println("NOTIFY:", title, "-", text) }
 func (t *Tray) Quit() {
 	if t != nil {
@@ -96,3 +97,5 @@ func VolumeID(path string) string { return "" }
 func InstalledVersion() string { return "" }
 
 func LegacyMachineID() string { return "" }
+
+func OnBattery() bool { return os.Getenv("SELVASYNC_TEST_BATTERY") != "" }

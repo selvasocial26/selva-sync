@@ -37,6 +37,7 @@ var (
 	procGetModuleHandleW         = kernel32.NewProc("GetModuleHandleW")
 	procSetErrorMode             = kernel32.NewProc("SetErrorMode")
 	procGetVolumePathNameW       = kernel32.NewProc("GetVolumePathNameW")
+	procGetSystemPowerStatus     = kernel32.NewProc("GetSystemPowerStatus")
 
 	procRegCreateKeyExW = advapi32.NewProc("RegCreateKeyExW")
 	procRegSetValueExW  = advapi32.NewProc("RegSetValueExW")
@@ -473,9 +474,15 @@ func Install(self, version, publisher string) error {
 			return werr
 		}
 	}
-	// copy Google credentials file shipped next to the downloaded .exe
-	if b, err := os.ReadFile(filepath.Join(filepath.Dir(self), "google-client.json")); err == nil {
-		os.WriteFile(filepath.Join(InstallDir(), "google-client.json"), b, 0o644)
+	// copy the Google credentials and office setup files shipped next to
+	// the downloaded .exe (small files only)
+	for _, name := range []string{"google-client.json", "selvasync-setup.json"} {
+		src := filepath.Join(filepath.Dir(self), name)
+		if st, err := os.Stat(src); err == nil && st.Mode().IsRegular() && st.Size() < 256<<10 {
+			if b, err := os.ReadFile(src); err == nil {
+				os.WriteFile(filepath.Join(InstallDir(), name), b, 0o644)
+			}
+		}
 	}
 	script := `$s=(New-Object -ComObject WScript.Shell).CreateShortcut(` + psQuote(shortcutPath()) + `);` +
 		`$s.TargetPath=` + psQuote(dst) + `;$s.WorkingDirectory=` + psQuote(InstallDir()) + `;` +
@@ -602,4 +609,23 @@ func VolumeID(path string) string {
 		return ""
 	}
 	return fmt.Sprintf("%08X", serial)
+}
+
+// OnBattery reports that the computer is running on battery power
+// (false for desktops and when plugged in).
+func OnBattery() bool {
+	var st struct {
+		ACLineStatus        byte
+		BatteryFlag         byte
+		BatteryLifePercent  byte
+		SystemStatusFlag    byte
+		BatteryLifeTime     uint32
+		BatteryFullLifeTime uint32
+	}
+	r, _, _ := procGetSystemPowerStatus.Call(uintptr(unsafe.Pointer(&st)))
+	if r == 0 {
+		return false
+	}
+	// ACLineStatus 0 = offline (battery); 128 in BatteryFlag = no battery
+	return st.ACLineStatus == 0 && st.BatteryFlag != 128
 }
