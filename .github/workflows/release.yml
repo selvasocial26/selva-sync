@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   build:
@@ -17,6 +18,8 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24"
+      - name: Install Windows resource compiler (version details)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq binutils-mingw-w64-x86-64
       - name: Test
         run: go test ./...
       - name: Build SelvaSync.exe
@@ -28,7 +31,40 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           [ "${GITHUB_REF_TYPE}" = "tag" ] || VERSION="0.0.0-dev"
           VERSION="$VERSION" bash ./build.sh
-          sha256sum dist/SelvaSync.exe > dist/SelvaSync.exe.sha256
+
+      # ---- Code signing with SignPath Foundation ----
+      # Turned on by adding the repository variables SIGNPATH_ORGANIZATION_ID,
+      # SIGNPATH_PROJECT_SLUG, SIGNPATH_SIGNING_POLICY_SLUG and the secret
+      # SIGNPATH_API_TOKEN (all from SignPath). Each signing request must be
+      # approved in SignPath; the build waits up to one hour for that.
+      - name: Upload unsigned build for signing
+        id: unsigned
+        if: startsWith(github.ref, 'refs/tags/v') && vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: SelvaSync-unsigned
+          path: dist/SelvaSync.exe
+      - name: Sign with SignPath
+        if: startsWith(github.ref, 'refs/tags/v') && vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 3600
+          output-artifact-directory: dist-signed
+      - name: Use the signed file
+        if: startsWith(github.ref, 'refs/tags/v') && vars.SIGNPATH_ORGANIZATION_ID != ''
+        run: |
+          f=$(find dist-signed -name SelvaSync.exe | head -1)
+          test -n "$f"
+          cp "$f" dist/SelvaSync.exe
+
+      - name: Checksum
+        run: cd dist && sha256sum SelvaSync.exe > SelvaSync.exe.sha256
       - uses: actions/upload-artifact@v4
         with:
           name: SelvaSync
