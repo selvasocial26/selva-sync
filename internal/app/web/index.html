@@ -72,7 +72,8 @@
       <p class="muted" data-i18n="folders_intro"></p>
       <div class="card">
         <div id="sourceList" class="source-list"></div>
-        <div class="actions"><button class="btn primary" id="btnAddFolder" data-i18n="btn_add_folder"></button></div>
+        <div class="actions"><button class="btn primary" id="btnAddFolder" data-i18n="btn_add_folder"></button> <button class="btn" id="btnWholePC" data-i18n="btn_whole_pc"></button></div>
+        <p class="hint" data-i18n="whole_pc_hint"></p>
       </div>
       <div class="card">
         <h3 data-i18n="exclude_title"></h3>
@@ -84,6 +85,9 @@
           <div class="inline"><input type="number" id="maxSize" min="0" step="1" data-set="maxFileSizeMB" data-type="int"><span>MB</span></div>
           <div class="hint" data-i18n="zero_no_limit"></div>
         </div>
+      </div>
+      <div class="card">
+        <label class="toggle"><input type="checkbox" data-set="cloudFiles"><span></span><div><b data-i18n="cloud_files"></b><small data-i18n="cloud_files_d"></small></div></label>
       </div>
     </section>
 

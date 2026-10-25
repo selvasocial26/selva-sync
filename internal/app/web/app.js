@@ -580,6 +580,33 @@
     renderHome();
   }
 
+  // one click: every internal drive (C:, D:...). USB and network drives are
+  // left out. Folders already inside those drives are replaced by the drive
+  // (their files keep the same place on Drive, so nothing is uploaded twice).
+  async function wholeComputer() {
+    let r;
+    try { r = await api("/api/browse"); } catch (e) { toast(t(e.message)); return; }
+    const drives = (r.entries || []).filter((x) => x.kind === "fixed").map((x) => x.path);
+    if (!drives.length) { toast(t("whole_pc_none")); return; }
+    const norm = (x) => x.replace(/[\\/]+$/, "").toLowerCase();
+    const roots = drives.map(norm);
+    const label = drives.map((d) => d.replace(/[\\/]+$/, "") || d).join(", ");
+    if (!(await confirmBox(t("whole_pc_title"), t("whole_pc_d", { drives: label })))) return;
+    const under = (p) => roots.some((x) => norm(p).startsWith(x + "\\"));
+    const next = S.settings.sources.filter((s) => !under(s.path));
+    for (const d of drives) {
+      const cur = next.find((s) => norm(s.path) === norm(d));
+      if (cur) cur.enabled = true;
+      else next.push({ id: "", path: d, enabled: true });
+    }
+    S.settings.sources = next;
+    await saveNow();
+    renderSources();
+    renderHome();
+    toast(t("whole_pc_added", { drives: label }));
+    if (S.account) runPreview(); // size and free Google Drive space before the first upload
+  }
+
   // ---------- preview ----------
   async function showPreview() {
     const pv = await api("/api/preview").catch(() => null);
@@ -711,6 +738,7 @@
     $("#prevGo").addEventListener("click", () => { $("#prevModal").classList.add("hidden"); startSync({}); });
     $("#btnFullCheck").addEventListener("click", () => { startSync({ fullCheck: true }); show("home"); });
     $("#btnAddFolder").addEventListener("click", openPicker);
+    $("#btnWholePC").addEventListener("click", wholeComputer);
     $("#pickOk").addEventListener("click", pickConfirm);
     $$("[data-close]").forEach((b) => b.addEventListener("click", () => b.closest(".modal").classList.add("hidden")));
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") $$(".modal").forEach((m) => { if (m.id !== "confirmModal") m.classList.add("hidden"); }); });
