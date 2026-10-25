@@ -1,3 +1,4 @@
 dist/
 *.exe
 google-client.json
+build/version.rc
