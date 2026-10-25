@@ -64,6 +64,9 @@ type Settings struct {
 	AlertDays int      `json:"alertDays"`           // warn after this many days without a successful backup (0 = off)
 	OnlyOnAC  bool     `json:"onlyOnAC"`            // laptops: sync only while plugged in
 	Reports   bool     `json:"reports"`             // write a monthly report file into the backup folder
+	// CloudFiles also backs up OneDrive files that are only in the cloud.
+	// They are downloaded for the backup and made online-only again after.
+	CloudFiles bool `json:"cloudFiles"`
 	// Managed lists settings fixed by the organisation's setup file.
 	Managed []string `json:"managed,omitempty"`
 }
