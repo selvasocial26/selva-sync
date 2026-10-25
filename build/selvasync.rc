@@ -2,8 +2,8 @@
 1 ICON "../assets/selvasync.ico"
 1 24 "selvasync.manifest"
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION 1,0,0,0
-PRODUCTVERSION 1,0,0,0
+FILEVERSION 1,2,0,0
+PRODUCTVERSION 1,2,0,0
 FILEOS 0x40004
 FILETYPE 0x1
 BEGIN
@@ -13,12 +13,12 @@ BEGIN
     BEGIN
       VALUE "CompanyName", "Dr. Selvakumar Vellingiri"
       VALUE "FileDescription", "Selva Sync - mirror your PC to Google Drive"
-      VALUE "FileVersion", "1.0.0"
+      VALUE "FileVersion", "1.2.0"
       VALUE "InternalName", "SelvaSync"
       VALUE "LegalCopyright", "Copyright (c) 2026 Dr. Selvakumar Vellingiri. MIT License."
       VALUE "OriginalFilename", "SelvaSync.exe"
       VALUE "ProductName", "Selva Sync"
-      VALUE "ProductVersion", "1.0.0"
+      VALUE "ProductVersion", "1.2.0"
     END
   END
   BLOCK "VarFileInfo"
