@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.3 (25 Oct 2026)
+
+- Folders that OneDrive manages (for example a Desktop or Documents folder backed up by OneDrive) were hidden in *Add folder* and skipped during backup. They are now shown and backed up. Files that are "online-only" in OneDrive are still skipped, so a backup never downloads them; set them to *Always keep on this device* to include them.
+- The Desktop, Documents, Downloads, Pictures, Videos and Music shortcuts in *Add folder* now open the real folder, also when OneDrive has moved it.
+
 ## 1.2.2 (25 Oct 2026)
 
 - Windows Defender wrongly flagged 1.2.1 as "Trojan:Win32/Bearfoos.A!ml". Selva Sync no longer starts PowerShell at all: the metered-connection check now asks Windows directly, and the Start Menu shortcut is created with the Windows Shell's own shortcut object.
