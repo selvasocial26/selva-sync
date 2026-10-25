@@ -113,6 +113,10 @@ So Selva Sync takes your treasure and hides it safely in the forest of the cloud
 
 Yes, I named a backup app after myself. In my defence, "Treasure Forest Squirrel Sync" didn't fit on the icon.
 
+## Credits
+
+Created by Dr. Selvakumar Vellingiri. Co-developed with Claude (AI by Anthropic): I brought the problem, the chai and the name; Claude brought the code and the patience. ☕
+
 ## Licence
 
 MIT © 2026 Dr. Selvakumar Vellingiri. Free to use, share and modify. See [LICENSE](LICENSE).
