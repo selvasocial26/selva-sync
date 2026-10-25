@@ -5,7 +5,6 @@ package platform
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -17,7 +16,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-	"unicode/utf16"
 	"unsafe"
 )
 
@@ -63,9 +61,6 @@ func sysTool(name string) string {
 	if root == "" {
 		root = `C:\Windows`
 	}
-	if name == "powershell.exe" {
-		return filepath.Join(root, `System32\WindowsPowerShell\v1.0\powershell.exe`)
-	}
 	return filepath.Join(root, "System32", name)
 }
 
@@ -78,16 +73,6 @@ func runTool(timeout time.Duration, cmdLine string, name string, args ...string)
 		cmd.SysProcAttr.CmdLine = cmdLine
 	}
 	return cmd.Output()
-}
-
-// psEncoded passes a PowerShell script safely (no quoting problems).
-func psEncoded(script string) string {
-	u := utf16.Encode([]rune(script))
-	b := make([]byte, len(u)*2)
-	for i, c := range u {
-		b[2*i], b[2*i+1] = byte(c), byte(c>>8)
-	}
-	return base64.StdEncoding.EncodeToString(b)
 }
 
 func hidden(cmd *exec.Cmd) *exec.Cmd {
@@ -400,18 +385,8 @@ func Metered() bool {
 	}
 	metAt = time.Now()
 	metCache = false
-	script := `$p=[Windows.Networking.Connectivity.NetworkInformation,Windows.Networking.Connectivity,ContentType=WindowsRuntime]::GetInternetConnectionProfile();` +
-		`if($p){$c=$p.GetConnectionCost();Write-Output ("$($c.NetworkCostType)|$($c.Roaming)|$($c.OverDataLimit)")}`
-	out, err := runTool(15*time.Second, "", "powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", psEncoded(script))
-	if err != nil {
-		return false
-	}
-	parts := strings.Split(strings.TrimSpace(string(out)), "|")
-	if len(parts) >= 1 && (parts[0] == "Fixed" || parts[0] == "Variable") {
-		metCache = true
-	}
-	if len(parts) >= 3 && (strings.EqualFold(parts[1], "True") || strings.EqualFold(parts[2], "True")) {
-		metCache = true
+	if m, ok := connectionMetered(); ok {
+		metCache = m
 	}
 	return metCache
 }
@@ -446,8 +421,6 @@ func InstalledExe() string { return filepath.Join(InstallDir(), "SelvaSync.exe")
 func shortcutPath() string {
 	return filepath.Join(os.Getenv("APPDATA"), `Microsoft\Windows\Start Menu\Programs\Selva Sync.lnk`)
 }
-
-func psQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", "''") + "'" }
 
 // Install copies the program to the install folder, adds a Start Menu
 // shortcut and an entry in "Apps & features".
@@ -484,10 +457,7 @@ func Install(self, version, publisher string) error {
 			}
 		}
 	}
-	script := `$s=(New-Object -ComObject WScript.Shell).CreateShortcut(` + psQuote(shortcutPath()) + `);` +
-		`$s.TargetPath=` + psQuote(dst) + `;$s.WorkingDirectory=` + psQuote(InstallDir()) + `;` +
-		`$s.Description='Selva Sync - mirror your PC to Google Drive';$s.Save()`
-	_, _ = runTool(30*time.Second, "", "powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", psEncoded(script))
+	_ = createShortcut(shortcutPath(), dst, InstallDir(), "Selva Sync - mirror your PC to Google Drive")
 
 	regSetString(uninstallKey, "DisplayName", "Selva Sync")
 	regSetString(uninstallKey, "DisplayVersion", version)
