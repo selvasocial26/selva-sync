@@ -56,6 +56,12 @@ type Hooks struct {
 	OnBattery func() bool
 	// ReportText writes the monthly report (month "2026-10").
 	ReportText func(month string, st config.MonthStats, set config.Settings) string
+	// CloudOnly reports that a file is an online-only placeholder (OneDrive
+	// "Files On-Demand"): reading it makes Windows download it first.
+	CloudOnly func(path string) bool
+	// FreeCloud asks OneDrive to make a file online-only again after it was
+	// downloaded for the backup, so no disk space stays in use.
+	FreeCloud func(path string)
 }
 
 // Status is shown live in the app window.
@@ -1668,6 +1674,15 @@ func fileMD5(p string, max int64) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
+// localMD5 is fileMD5 for a file that may be an online-only OneDrive file:
+// such a file is made online-only again after reading it.
+func (e *Engine) localMD5(p string, max int64) string {
+	if e.Hooks.CloudOnly != nil && e.Hooks.FreeCloud != nil && e.Hooks.CloudOnly(p) {
+		defer e.Hooks.FreeCloud(p)
+	}
+	return fileMD5(p, max)
+}
+
 type goneFile struct {
 	key string
 	ent config.FileEntry
@@ -1799,7 +1814,8 @@ func (e *Engine) scan(ctx context.Context, set config.Settings, deepMax int64) (
 				protected = append(protected, key)
 				return nil
 			}
-			if e.Hooks.SkipAttr != nil && e.Hooks.SkipAttr(info) {
+			cloud := e.Hooks.SkipAttr != nil && e.Hooks.SkipAttr(info)
+			if cloud && !set.CloudFiles {
 				protected = append(protected, key)
 				if d.IsDir() {
 					return fs.SkipDir
@@ -1834,7 +1850,8 @@ func (e *Engine) scan(ctx context.Context, set config.Settings, deepMax int64) (
 			case ent.Size != size || ent.MTime != mt:
 				plan = append(plan, &item{op: "update", key: key, local: p, size: size, mtime: mt, existing: ent})
 			default:
-				if deepMax > 0 && ent.MD5 != "" && size <= deepMax && fileMD5(p, deepMax) != ent.MD5 {
+				// online-only files are not downloaded just to check them
+				if deepMax > 0 && !cloud && ent.MD5 != "" && size <= deepMax && fileMD5(p, deepMax) != ent.MD5 {
 					plan = append(plan, &item{op: "update", key: key, local: p, size: size, mtime: mt, existing: ent})
 				}
 				if !ent.Seen {
@@ -2236,7 +2253,7 @@ var errMoveFallback = errors.New("move not possible, upload instead")
 // happen to have the same size and time are never confused.
 func (e *Engine) move(ctx context.Context, it *item) error {
 	f, err := e.Drive.Get(ctx, it.existing.ID)
-	if drive.IsNotFound(err) || err == nil && (f.Trashed || f.MD5 == "" || fileMD5(it.local, it.size) != f.MD5) {
+	if drive.IsNotFound(err) || err == nil && (f.Trashed || f.MD5 == "" || e.localMD5(it.local, it.size) != f.MD5) {
 		return errMoveFallback
 	}
 	if err != nil {
@@ -2357,6 +2374,10 @@ func (e *Engine) upload(ctx context.Context, set config.Settings, it *item, lim 
 					Created: time.Now().Unix(), ParentID: pid, ExistingID: existing}
 			})
 		},
+	}
+	if e.Hooks.CloudOnly != nil && e.Hooks.FreeCloud != nil && e.Hooks.CloudOnly(it.local) {
+		// OneDrive downloads the file while it is read; give the space back afterwards
+		defer e.Hooks.FreeCloud(it.local)
 	}
 	id, err := e.Drive.Upload(ctx, sp)
 	if errors.Is(err, drive.ErrSessionGone) {
