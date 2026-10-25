@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Code Signing Policy – Selva Sync</title>
+<meta name="description" content="How Selva Sync's Windows releases are built and signed, who approves them, and how to verify them.">
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./"><img src="icon.png" alt="">Selva Sync</a>
+    <nav class="links"><a href="./">Home</a><a href="privacy.html">Privacy policy</a><a href="terms.html">Terms</a></nav>
+  </div>
+</header>
+
+<main class="doc">
+  <h1>Code Signing Policy</h1>
+  <p class="meta">Selva Sync · Last updated: 25 October 2026</p>
+
+  <h2>Signing</h2>
+  <p>Free code signing provided by <a href="https://about.signpath.io/" rel="noopener">SignPath.io</a>, certificate by <a href="https://signpath.org/" rel="noopener">SignPath Foundation</a>.</p>
+  <p><b>Status:</b> our application to SignPath Foundation is in progress. Until it is approved, Windows releases are not signed, and Windows may show "Windows protected your PC" (click <i>More info → Run anyway</i>). This page will be updated when signed releases start.</p>
+  <p>Only <b>SelvaSync.exe</b> published on the project's <a class="dl-link" href="#">GitHub Releases page</a> is signed. Copies from anywhere else are not ours.</p>
+
+  <h2>How releases are built</h2>
+  <ul>
+    <li>All source code is public in the <a class="repo-link" href="#">selva-sync repository</a> under the MIT licence. It uses only the Go standard library, with no other code.</li>
+    <li>Every release is built automatically by GitHub Actions from a version tag in that repository, using the build script and workflow that are also in the repository. Nobody builds release files by hand.</li>
+    <li>The automated tests run before every build.</li>
+    <li>Each signing request is approved manually by the approver below, after checking that it comes from the expected release.</li>
+  </ul>
+
+  <h2>Team roles</h2>
+  <table>
+    <tr><th>Role</th><th>Member</th></tr>
+    <tr><td>Author (committer)</td><td>Dr. Selvakumar Vellingiri (<a href="https://github.com/selvasocial26" rel="noopener">@selvasocial26</a>)</td></tr>
+    <tr><td>Reviewer</td><td>Dr. Selvakumar Vellingiri (<a href="https://github.com/selvasocial26" rel="noopener">@selvasocial26</a>)</td></tr>
+    <tr><td>Approver</td><td>Dr. Selvakumar Vellingiri (<a href="https://github.com/selvasocial26" rel="noopener">@selvasocial26</a>)</td></tr>
+  </table>
+  <p>The design and every change are decided and reviewed by the author. Code is written with the help of an AI assistant (Claude by Anthropic) under the author's direction; nothing is merged without the author's review. All team members use multi-factor authentication for GitHub and SignPath.</p>
+
+  <h2>Privacy</h2>
+  <p>Selva Sync sends your chosen files only to <b>your own Google Drive</b>, using Google's sign-in. It sends nothing to the developer or to any other system. See the <a href="privacy.html">Privacy Policy</a> and Google's <a href="https://policies.google.com/privacy" rel="noopener">privacy policy</a>.</p>
+
+  <h2>What the app changes on your PC</h2>
+  <p>Before installing, the app asks for confirmation. It installs for your Windows user only (no administrator rights), adds a Start menu shortcut, an entry in Windows "Apps", and starts with Windows (can be turned off). It can be uninstalled at any time from Windows Settings → Apps or from the app's About page.</p>
+
+  <h2>Verify a download</h2>
+  <ul>
+    <li>Each release lists a SHA-256 checksum (<i>SelvaSync.exe.sha256</i>). In PowerShell: <code>Get-FileHash .\SelvaSync.exe</code> and compare.</li>
+    <li>For signed releases: right-click SelvaSync.exe → Properties → Digital Signatures.</li>
+  </ul>
+
+  <h2>Report a problem</h2>
+  <p>If you find a suspicious file or a signing problem, please open an issue in the <a class="repo-link" href="#">source code repository</a> or contact Dr. Selvakumar Vellingiri via <a href="https://www.linkedin.com/in/selvakumar-vellingiri-phd-97744572/" rel="noopener">LinkedIn</a>.</p>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Dr. Selvakumar Vellingiri · Selva Sync</span>
+    <span><a href="./">Home</a> · <a href="privacy.html">Privacy policy</a> · <a href="terms.html">Terms</a></span>
+  </div>
+</footer>
+<script src="site.js"></script>
+</body>
+</html>
