@@ -102,6 +102,17 @@ Versions 1.1 and 1.2 went through four rounds of "try to break it" testing (data
 
 Bug reports, translations and improvements are welcome. Please open an issue or a pull request. To add a language, see [docs/TRANSLATING.md](docs/TRANSLATING.md). It only takes one text file.
 
+## Why "Selva"?
+
+**Short answer:** it's my name. **Long answer:** it's still my name, but with better excuses.
+
+- 🌿 In **Tamil**, *selvam* means **wealth, treasure**. Your files are exactly that: twenty years of photos, the report you rewrote nine times, and that one Excel sheet nobody else understands.
+- 🌳 In **Spanish, Portuguese and Italian**, *selva* means **forest, jungle**.
+
+So Selva Sync takes your treasure and hides it safely in the forest of the cloud, where only you can find it. Think of it as a very polite squirrel that buries your files every night and, unlike real squirrels, never forgets where.
+
+Yes, I named a backup app after myself. In my defence, "Treasure Forest Squirrel Sync" didn't fit on the icon.
+
 ## Licence
 
 MIT © 2026 Dr. Selvakumar Vellingiri. Free to use, share and modify. See [LICENSE](LICENSE).
