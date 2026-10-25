@@ -115,7 +115,9 @@ Yes, I named a backup app after myself. In my defence, "Treasure Forest Squirrel
 
 ## Credits
 
-Created by Dr. Selvakumar Vellingiri. Co-developed with Claude (AI by Anthropic): I brought the problem, the chai and the name; Claude brought the code and the patience. ☕
+Created by Dr. Selvakumar Vellingiri, Lead – Knowledge Management & Partnerships at Utthan.
+
+The idea, the design and every decision come from years of running laptop backups at Utthan: what to back up and what to skip, how the archive and schedules should work, how it should respect internet limits, and what to test before each release. The code was written with Claude (AI by Anthropic), following that design and tested against it. I brought the problem, the plan and the chai; Claude did the typing. ☕
 
 ## Licence
 
