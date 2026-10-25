@@ -266,8 +266,17 @@ func Drives() []DriveInfo {
 }
 
 // SkipAttr skips cloud-only placeholder files (OneDrive "Files On-Demand"
-// etc.) so that reading them does not download them, and junction folders.
+// etc.) so that reading them does not download them.
+//
+// Folders are never skipped here. Folders that OneDrive manages carry a
+// cloud reparse point and "recall" flags, but listing them only reads
+// names, so they must be shown and backed up (for example a Desktop that
+// OneDrive backs up). Junctions and symbolic links are reported by Go as
+// symlinks, not folders, and are skipped by the callers.
 func SkipAttr(info fs.FileInfo) bool {
+	if info.IsDir() {
+		return false
+	}
 	d, ok := info.Sys().(*syscall.Win32FileAttributeData)
 	if !ok {
 		return false
@@ -276,13 +285,8 @@ func SkipAttr(info fs.FileInfo) bool {
 		offline        = 0x1000
 		recallOnOpen   = 0x40000
 		recallOnAccess = 0x400000
-		reparse        = 0x400
 	)
-	a := d.FileAttributes
-	if a&(offline|recallOnOpen|recallOnAccess) != 0 {
-		return true
-	}
-	return info.IsDir() && a&reparse != 0
+	return d.FileAttributes&(offline|recallOnOpen|recallOnAccess) != 0
 }
 
 // ---------- language ----------

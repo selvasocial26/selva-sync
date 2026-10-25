@@ -35,14 +35,24 @@ func SetStartup(enabled bool, exe string) error      { return nil }
 func Protect(b []byte) ([]byte, error)               { return b, nil }
 func Unprotect(b []byte) ([]byte, error)             { return b, nil }
 func SkipAttr(fs.FileInfo) bool                      { return false }
-func UserLanguage() string                           { return "en" }
-func WifiSSID() (string, bool)                       { return os.Getenv("SELVASYNC_TEST_SSID"), true }
-func Metered() bool                                  { return os.Getenv("SELVASYNC_TEST_METERED") != "" }
-func SingleInstance() bool                           { return true }
-func InstallDir() string                             { return filepath.Dir(os.Args[0]) }
-func InstalledExe() string                           { p, _ := os.Executable(); return p }
-func Install(self, version, publisher string) error  { return nil }
-func Uninstall(removeData bool, dataDir string)      {}
+
+// KnownFolder returns a user folder such as "Desktop" inside the home folder.
+func KnownFolder(name string) string {
+	home, _ := os.UserHomeDir()
+	if home == "" {
+		return ""
+	}
+	return filepath.Join(home, name)
+}
+
+func UserLanguage() string                          { return "en" }
+func WifiSSID() (string, bool)                      { return os.Getenv("SELVASYNC_TEST_SSID"), true }
+func Metered() bool                                 { return os.Getenv("SELVASYNC_TEST_METERED") != "" }
+func SingleInstance() bool                          { return true }
+func InstallDir() string                            { return filepath.Dir(os.Args[0]) }
+func InstalledExe() string                          { p, _ := os.Executable(); return p }
+func Install(self, version, publisher string) error { return nil }
+func Uninstall(removeData bool, dataDir string)     {}
 
 func Drives() []DriveInfo {
 	home, _ := os.UserHomeDir()

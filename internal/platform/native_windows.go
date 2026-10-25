@@ -4,6 +4,8 @@ package platform
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 	"runtime"
 	"syscall"
 	"unsafe"
@@ -21,7 +23,40 @@ var (
 	procCoInitializeEx             = ole32.NewProc("CoInitializeEx")
 	procCoUninitialize             = ole32.NewProc("CoUninitialize")
 	procCoCreateInstance           = ole32.NewProc("CoCreateInstance")
+	procCoTaskMemFree              = ole32.NewProc("CoTaskMemFree")
+	procSHGetKnownFolderPath       = syscall.NewLazyDLL("shell32.dll").NewProc("SHGetKnownFolderPath")
 )
+
+var knownFolderIDs = map[string]guid{
+	"Desktop":   {0xB4BFCC3A, 0xDB2C, 0x424C, [8]byte{0xB0, 0x29, 0x7F, 0xE9, 0x9A, 0x87, 0xC6, 0x41}},
+	"Documents": {0xFDD39AD0, 0x238F, 0x46AF, [8]byte{0xAD, 0xB4, 0x6C, 0x85, 0x48, 0x03, 0x69, 0xC7}},
+	"Downloads": {0x374DE290, 0x123F, 0x4565, [8]byte{0x91, 0x64, 0x39, 0xC4, 0x92, 0x5E, 0x46, 0x7B}},
+	"Pictures":  {0x33E28130, 0x4E1E, 0x4676, [8]byte{0x83, 0x5A, 0x98, 0x39, 0x5C, 0x3B, 0xC3, 0xBB}},
+	"Videos":    {0x18989B1D, 0x99B5, 0x455B, [8]byte{0x84, 0x1C, 0xAB, 0x7C, 0x74, 0xE4, 0xDD, 0xFC}},
+	"Music":     {0x4BD8D571, 0x6D19, 0x48D3, [8]byte{0xBE, 0x97, 0x42, 0x22, 0x20, 0x08, 0x0E, 0x43}},
+}
+
+// KnownFolder returns the real location of a user folder such as
+// "Desktop" or "Documents". When OneDrive backs up these folders they live
+// inside the OneDrive folder, not directly in the user's home folder.
+func KnownFolder(name string) string {
+	if id, ok := knownFolderIDs[name]; ok && procSHGetKnownFolderPath.Find() == nil {
+		var p *uint16
+		r, _, _ := procSHGetKnownFolderPath.Call(uintptr(unsafe.Pointer(&id)), 0, 0, uintptr(unsafe.Pointer(&p)))
+		if p != nil {
+			path := syscall.UTF16ToString(unsafe.Slice(p, 32768))
+			procCoTaskMemFree.Call(uintptr(unsafe.Pointer(p)))
+			if r == 0 && path != "" {
+				return path
+			}
+		}
+	}
+	home, _ := os.UserHomeDir()
+	if home == "" {
+		return ""
+	}
+	return filepath.Join(home, name)
+}
 
 // nlNetworkConnectivityHint mirrors NL_NETWORK_CONNECTIVITY_HINT.
 type nlNetworkConnectivityHint struct {
