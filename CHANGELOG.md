@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.2 (25 Oct 2026)
+
+- Windows Defender wrongly flagged 1.2.1 as "Trojan:Win32/Bearfoos.A!ml". Selva Sync no longer starts PowerShell at all: the metered-connection check now asks Windows directly, and the Start Menu shortcut is created with the Windows Shell's own shortcut object.
+
+## 1.2.1 (25 Oct 2026)
+
+- The *Choose folder in Google Drive* button is turned on in the published build.
+
 ## 1.2.0 (25 Oct 2026)
 
 ### New
