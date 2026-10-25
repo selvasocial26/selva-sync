@@ -33,7 +33,7 @@ const SetupFileName = "selvasync-setup.json"
 var managedKeys = map[string]bool{
 	"schedule": true, "location": true, "dayLimitKBps": true, "nightLimitKBps": true, "nightStart": true, "nightEnd": true,
 	"monthlyCapMB": true, "pauseOnMetered": true, "blockedWifi": true, "allowedWifi": true, "excludes": true,
-	"maxFileSizeMB": true, "deleteMode": true, "keepOldVersions": true, "archiveDays": true, "onlyOnAC": true,
+	"maxFileSizeMB": true, "deleteMode": true, "keepOldVersions": true, "archiveDays": true, "onlyOnAC": true, "cloudFiles": true,
 	"alertDays": true, "reports": true, "driveFolderName": true, "parallel": true, "syncOnStartup": true,
 	"startWithWindows": true, "notifications": true, "pickerUrl": true,
 }

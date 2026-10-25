@@ -127,6 +127,8 @@ func New(dataDir string) (*App, error) {
 		LegacyMachineID: platform.LegacyMachineID(),
 		VolumeID:        platform.VolumeID,
 		OnBattery:       platform.OnBattery,
+		CloudOnly:       platform.CloudOnly,
+		FreeCloud:       platform.FreeCloud,
 	}, a.Log)
 	a.Engine.Hooks.ReportText = a.reportText
 	return a, nil
