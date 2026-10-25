@@ -154,3 +154,52 @@ func createShortcutOnThread(lnkPath, target, workDir, description string) error 
 	}
 	return nil
 }
+
+var (
+	procGetFileAttributesW = syscall.NewLazyDLL("kernel32.dll").NewProc("GetFileAttributesW")
+	procSetFileAttributesW = syscall.NewLazyDLL("kernel32.dll").NewProc("SetFileAttributesW")
+)
+
+const (
+	attrOffline        = 0x1000
+	attrRecallOnOpen   = 0x40000
+	attrPinned         = 0x80000
+	attrUnpinned       = 0x100000
+	attrRecallOnAccess = 0x400000
+	invalidAttributes  = 0xFFFFFFFF
+)
+
+func fileAttrs(path string) (uint32, bool) {
+	p, err := syscall.UTF16PtrFromString(path)
+	if err != nil {
+		return 0, false
+	}
+	r, _, _ := procGetFileAttributesW.Call(uintptr(unsafe.Pointer(p)))
+	if uint32(r) == invalidAttributes {
+		return 0, false
+	}
+	return uint32(r), true
+}
+
+// CloudOnly reports that a file is an online-only placeholder, for example
+// a OneDrive file with the cloud icon. Reading it downloads it first.
+func CloudOnly(path string) bool {
+	a, ok := fileAttrs(path)
+	return ok && a&(attrOffline|attrRecallOnOpen|attrRecallOnAccess) != 0
+}
+
+// FreeCloud marks a file "online-only" again (like "Free up space" in
+// File Explorer), so OneDrive removes the downloaded copy from the disk.
+// Files the user set to "Always keep on this device" are never changed:
+// FreeCloud is only called for files that were online-only before.
+func FreeCloud(path string) {
+	a, ok := fileAttrs(path)
+	if !ok || a&attrPinned != 0 {
+		return
+	}
+	p, err := syscall.UTF16PtrFromString(path)
+	if err != nil {
+		return
+	}
+	procSetFileAttributesW.Call(uintptr(unsafe.Pointer(p)), uintptr((a|attrUnpinned)&^attrPinned))
+}

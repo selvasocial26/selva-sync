@@ -36,6 +36,10 @@ func Protect(b []byte) ([]byte, error)               { return b, nil }
 func Unprotect(b []byte) ([]byte, error)             { return b, nil }
 func SkipAttr(fs.FileInfo) bool                      { return false }
 
+// CloudOnly and FreeCloud are Windows-only (OneDrive Files On-Demand).
+func CloudOnly(string) bool { return false }
+func FreeCloud(string)      {}
+
 // KnownFolder returns a user folder such as "Desktop" inside the home folder.
 func KnownFolder(name string) string {
 	home, _ := os.UserHomeDir()
