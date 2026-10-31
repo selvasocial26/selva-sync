@@ -92,6 +92,8 @@ Large files continue where they stopped if the connection breaks, so no data is 
 
 Click **Open in Google Drive** on the Home screen, or go to *My Drive → Selva Sync → (your computer name)* (or to the folder you chose). Folders are arranged like your PC, for example `D-Drive / Accounts / 2026`.
 
+Inside your computer's folder you will also find shortcuts: one for each drive, named as Windows names it, such as *Local Disk (C)*, and one for each folder you chose to back up, such as *Documents*. They take you straight to that folder instead of clicking down through the whole path. A shortcut is only a signpost, so it holds no data and uses none of your Google Drive space, and your files stay where they are in the full folder tree. Selva Sync keeps these shortcuts up to date as you add or remove folders; shortcuts you make yourself are left alone.
+
 To restore a file, download it from Drive like any other file.
 
 ## Several computers, one Google account
