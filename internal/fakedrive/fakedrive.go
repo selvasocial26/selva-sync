@@ -31,6 +31,7 @@ type File struct {
 	Trashed  bool
 	Props    map[string]string
 	// v1.2: shared drives and access
+	Target   string // shortcut target ID (shortcuts only)
 	DriveID  string // shared drive the file is in ("" = My Drive)
 	ReadOnly bool   // the user can only view this folder
 	NoAccess bool   // the app's token cannot see this file
@@ -135,6 +136,9 @@ func (s *Server) json(f *File) map[string]any {
 	}
 	if f.DriveID != "" {
 		m["driveId"] = f.DriveID
+	}
+	if f.Target != "" {
+		m["shortcutDetails"] = map[string]any{"targetId": f.Target}
 	}
 	m["capabilities"] = map[string]any{"canAddChildren": f.Mime == "application/vnd.google-apps.folder" && !f.ReadOnly}
 	return m
@@ -395,6 +399,11 @@ func (s *Server) applyMeta(f *File, meta map[string]any) {
 	}
 	if m, ok := meta["mimeType"].(string); ok {
 		f.Mime = m
+	}
+	if sd, ok := meta["shortcutDetails"].(map[string]any); ok {
+		if t, ok := sd["targetId"].(string); ok {
+			f.Target = t
+		}
 	}
 	if f.Mime == "" {
 		f.Mime = "application/octet-stream"
