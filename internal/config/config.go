@@ -98,12 +98,20 @@ var DefaultExcludes = []string{
 	"/Documents and Settings",
 }
 
-// SystemExcludes are Windows system areas that are never backed up, even when
-// a saved exclude list (from an older version or a hand edit) leaves them out.
-var SystemExcludes = []string{
-	"/Windows", "/Windows.old", "/Program Files", "/Program Files (x86)", "/ProgramData",
-	"/$Recycle.Bin", "/System Volume Information", "/Recovery", "/PerfLogs",
-	"/Users/*/AppData", "/Documents and Settings",
+// SystemExcludes are the Windows system areas that are never backed up, even
+// when a saved exclude list (from an older version or a hand edit) leaves them
+// out. It is every drive-top rule of DefaultExcludes, so the two lists cannot
+// drift apart and page files and other locked system files stay out too.
+var SystemExcludes = systemExcludes()
+
+func systemExcludes() []string {
+	out := make([]string, 0, len(DefaultExcludes))
+	for _, p := range DefaultExcludes {
+		if strings.HasPrefix(p, "/") {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 // WithSystemExcludes returns the user's rules plus the system areas.
