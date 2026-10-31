@@ -609,6 +609,7 @@ func (e *Engine) Run(ctx context.Context, opt Options) config.RunSummary {
 		e.Log.Info("nothing", nil)
 		e.trimArchive(ctx, set)
 		e.writeReport(ctx, set)
+		e.ensureShortcuts(ctx, set)
 		return sum
 	}
 
@@ -624,6 +625,7 @@ func (e *Engine) Run(ctx context.Context, opt Options) config.RunSummary {
 		}
 		e.trimArchive(ctx, set)
 		e.writeReport(ctx, set)
+		e.ensureShortcuts(ctx, set)
 	}
 	return sum
 }
@@ -1361,6 +1363,12 @@ func (e *Engine) reindexPass(ctx context.Context, allowRelocate bool, trustAfter
 		for _, k := range kids {
 			if prefix == "" && k.IsFolder() && k.Name == ArchiveFolderName {
 				archiveID = k.ID
+				continue
+			}
+			// Shortcuts are signposts, not backed-up files. Recording one as
+			// a file would archive it on the next run, because no file on the
+			// PC matches it.
+			if k.IsShortcut() {
 				continue
 			}
 			key := k.Name
