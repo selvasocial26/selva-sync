@@ -98,6 +98,21 @@ var DefaultExcludes = []string{
 	"/Documents and Settings",
 }
 
+// SystemExcludes are Windows system areas that are never backed up, even when
+// a saved exclude list (from an older version or a hand edit) leaves them out.
+var SystemExcludes = []string{
+	"/Windows", "/Windows.old", "/Program Files", "/Program Files (x86)", "/ProgramData",
+	"/$Recycle.Bin", "/System Volume Information", "/Recovery", "/PerfLogs",
+	"/Users/*/AppData", "/Documents and Settings",
+}
+
+// WithSystemExcludes returns the user's rules plus the system areas.
+func WithSystemExcludes(user []string) []string {
+	out := make([]string, 0, len(user)+len(SystemExcludes))
+	out = append(out, user...)
+	return append(out, SystemExcludes...)
+}
+
 // oldDefaults were name-anywhere rules in version 1.0 that wrongly skipped
 // users' own folders; they are replaced by the drive-top rules above.
 var oldDefaults = map[string]string{
