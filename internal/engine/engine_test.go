@@ -325,6 +325,49 @@ func TestExcluded(t *testing.T) {
 	}
 }
 
+func TestSystemExcludesAlwaysApply(t *testing.T) {
+	rules := config.WithSystemExcludes([]string{"*.tmp"})
+	for _, c := range []struct{ name, rel, drel string }{
+		{"Program Files", "Program Files", "Program Files"},
+		{"Program Files (x86)", "Program Files (x86)", "Program Files (x86)"},
+		{"Windows", "Windows", "Windows"},
+		{"ProgramData", "ProgramData", "ProgramData"},
+	} {
+		if !excluded(rules, c.name, c.rel, c.drel) {
+			t.Errorf("%s should be excluded", c.rel)
+		}
+	}
+	if excluded(rules, "Program Files", "Clients/Program Files", "Data/Clients/Program Files") {
+		t.Errorf("a user folder named Program Files must still be backed up")
+	}
+	// big locked files at the top of the drive are system areas too
+	for _, n := range []string{"pagefile.sys", "hiberfil.sys", "swapfile.sys"} {
+		if !excluded(rules, n, n, n) {
+			t.Errorf("%s should be excluded", n)
+		}
+	}
+	// the user's own rules are kept
+	if !excluded(rules, "a.tmp", "x/a.tmp", "D/x/a.tmp") {
+		t.Errorf("the user's own rules must still apply")
+	}
+	// no drift: every drive-top default is mandatory
+	for _, p := range config.DefaultExcludes {
+		if !strings.HasPrefix(p, "/") {
+			continue
+		}
+		found := false
+		for _, q := range config.SystemExcludes {
+			if p == q {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("drive-top default %q missing from SystemExcludes", p)
+		}
+	}
+}
+
 func TestLimiter(t *testing.T) {
 	l := &Limiter{Rate: func() int64 { return 200 * 1024 }}
 	r := l.Wrap(context.Background(), bytes.NewReader(make([]byte, 600*1024)), nil)

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.6 (1 Nov 2026)
+
+- Windows itself is never backed up. `Windows`, `Program Files`, `Program Files (x86)`, `ProgramData`, `AppData`, the Recycle Bin, the page and hibernation files and the other Windows system areas are now always left out, even if an older settings file or a hand-edited exclude list left them in. Your own folder with one of those names (for example `D:\Clients\Program Files`) is still backed up as before.
+- Fixed: the monthly report test used the wrong month on the 31st of a month, so builds started on a 31st failed.
+
 ## 1.2.5 (25 Oct 2026)
 
 - The first time you run SelvaSync.exe, it now explains what it will change on the PC (install for your user, Start menu shortcut, "Apps" entry, start with Windows) and asks before installing.

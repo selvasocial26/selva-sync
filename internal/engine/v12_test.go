@@ -226,6 +226,14 @@ func TestV12_OnlyOnAC(t *testing.T) {
 	}
 }
 
+// prevMonth is the month writeReport reports on: the first day of this month,
+// minus one month. Computing it as time.Now().AddDate(0, -1, 0) is wrong on the
+// 31st, when the subtraction normalises forward into the current month.
+func prevMonth() string {
+	now := time.Now()
+	return time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.Local).AddDate(0, -1, 0).Format("2006-01")
+}
+
 func TestV12_MonthlyReport(t *testing.T) {
 	e := newEnv(t)
 	calls := 0
@@ -235,9 +243,7 @@ func TestV12_MonthlyReport(t *testing.T) {
 	}
 	e.write("a.txt", "a")
 	e.run(Options{})
-	prev := time.Now().AddDate(0, -1, 0)
-	prev = time.Date(prev.Year(), prev.Month(), 1, 0, 0, 0, 0, time.Local)
-	month := prev.Format("2006-01")
+	month := prevMonth()
 	e.eng.smu.Lock()
 	e.eng.state.Monthly[month] = &config.MonthStats{Runs: 7, OK: 6, Failed: 1, Uploaded: 42}
 	e.eng.smu.Unlock()
@@ -277,7 +283,7 @@ func TestV12_ReportOff(t *testing.T) {
 	e := newEnv(t)
 	e.set.Reports = false
 	e.eng.Hooks.ReportText = func(string, config.MonthStats, config.Settings) string { return "x" }
-	prev := time.Now().AddDate(0, -1, 0).Format("2006-01")
+	prev := prevMonth()
 	e.eng.smu.Lock()
 	e.eng.state.Monthly[prev] = &config.MonthStats{Runs: 1}
 	e.eng.smu.Unlock()
