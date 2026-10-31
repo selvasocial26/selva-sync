@@ -325,6 +325,23 @@ func TestExcluded(t *testing.T) {
 	}
 }
 
+func TestSystemExcludesAlwaysApply(t *testing.T) {
+	rules := config.WithSystemExcludes([]string{"*.tmp"})
+	for _, c := range []struct{ name, rel, drel string }{
+		{"Program Files", "Program Files", "Program Files"},
+		{"Program Files (x86)", "Program Files (x86)", "Program Files (x86)"},
+		{"Windows", "Windows", "Windows"},
+		{"ProgramData", "ProgramData", "ProgramData"},
+	} {
+		if !excluded(rules, c.name, c.rel, c.drel) {
+			t.Errorf("%s should be excluded", c.rel)
+		}
+	}
+	if excluded(rules, "Program Files", "Clients/Program Files", "Data/Clients/Program Files") {
+		t.Errorf("a user folder named Program Files must still be backed up")
+	}
+}
+
 func TestLimiter(t *testing.T) {
 	l := &Limiter{Rate: func() int64 { return 200 * 1024 }}
 	r := l.Wrap(context.Background(), bytes.NewReader(make([]byte, 600*1024)), nil)

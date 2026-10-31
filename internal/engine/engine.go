@@ -1689,6 +1689,7 @@ type goneFile struct {
 }
 
 func (e *Engine) scan(ctx context.Context, set config.Settings, deepMax int64) (plan []*item, missing []string, skippedBig int) {
+	rules := config.WithSystemExcludes(set.Excludes)
 	maxSize := int64(set.MaxFileSizeMB) << 20
 	e.smu.Lock()
 	files := make(map[string]config.FileEntry, len(e.state.Files))
@@ -1802,7 +1803,7 @@ func (e *Engine) scan(ctx context.Context, set config.Settings, deepMax int64) (
 				return nil
 			}
 			drel := driveRelative(filepath.Join(src.Path, filepath.FromSlash(rel)))
-			if excluded(set.Excludes, d.Name(), rel, drel) || d.Type()&fs.ModeSymlink != 0 {
+			if excluded(rules, d.Name(), rel, drel) || d.Type()&fs.ModeSymlink != 0 {
 				protected = append(protected, key)
 				if d.IsDir() {
 					return fs.SkipDir
