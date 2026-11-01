@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.7 (1 Nov 2026)
+
+- **Shortcuts to your folders** in Google Drive. Your computer's folder now also shows a shortcut for each drive (*Local Disk (C)*) and for each folder you chose to back up (*Documents*, *Accounts*), so you reach your files in one click instead of opening every level of the path. Nothing moves: the full folder tree is exactly as before and the shortcuts sit beside it. They hold no data and use no Google Drive space. Two chosen folders with the same name are told apart by the folder above them, for example *Work - Reports* and *Old - Reports*. Shortcuts you create yourself are never touched.
+
 ## 1.2.6 (1 Nov 2026)
 
 - Windows itself is never backed up. `Windows`, `Program Files`, `Program Files (x86)`, `ProgramData`, `AppData`, the Recycle Bin, the page and hibernation files and the other Windows system areas are now always left out, even if an older settings file or a hand-edited exclude list left them in. Your own folder with one of those names (for example `D:\Clients\Program Files`) is still backed up as before.

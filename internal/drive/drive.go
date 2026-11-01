@@ -149,6 +149,9 @@ type File struct {
 	Capabilities  *struct {
 		CanAddChildren bool `json:"canAddChildren"`
 	} `json:"capabilities,omitempty"`
+	Shortcut *struct {
+		TargetID string `json:"targetId"`
+	} `json:"shortcutDetails,omitempty"`
 }
 
 // Created returns when Drive created the file (Google's clock, not the PC's).
@@ -169,7 +172,7 @@ func (f File) ModTimeMs() int64 {
 	return t.UnixMilli()
 }
 
-const fileFields = "id,name,mimeType,parents,size,modifiedTime,trashed,appProperties,md5Checksum,createdTime,driveId,capabilities/canAddChildren"
+const fileFields = "id,name,mimeType,parents,size,modifiedTime,trashed,appProperties,md5Checksum,createdTime,driveId,capabilities/canAddChildren,shortcutDetails/targetId"
 
 // APIError is returned for non-success HTTP responses.
 type APIError struct {
