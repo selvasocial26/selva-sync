@@ -31,7 +31,7 @@ func driveLabel(head string) string {
 // drive shortcut and the user is back to clicking Users > name > Documents.
 var wellKnownUserFolders = map[string]bool{
 	"desktop": true, "documents": true, "pictures": true,
-	"videos": true, "music": true, "onedrive": true,
+	"videos": true, "music": true, "onedrive": true, "downloads": true,
 }
 
 // userFolderShortcuts finds <head>/Users/<someone>/<well-known> folders that
