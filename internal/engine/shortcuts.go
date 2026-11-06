@@ -26,6 +26,33 @@ func driveLabel(head string) string {
 	return head
 }
 
+// wellKnownUserFolders are the folders people actually look for when a whole
+// drive is backed up. Without these, "Back up whole computer" leaves only a
+// drive shortcut and the user is back to clicking Users > name > Documents.
+var wellKnownUserFolders = map[string]bool{
+	"desktop": true, "documents": true, "pictures": true,
+	"videos": true, "music": true, "onedrive": true,
+}
+
+// userFolderShortcuts finds <head>/Users/<someone>/<well-known> folders that
+// were actually backed up, so a whole-drive source still gets signposts to
+// the folders people use. Only folders already on Drive are offered, so a
+// folder that was excluded or empty never gets a shortcut.
+func userFolderShortcuts(head string, folders map[string]string) []string {
+	var out []string
+	for key := range folders {
+		segs := strings.Split(key, "/")
+		if len(segs) != 4 || segs[0] != head || !strings.EqualFold(segs[1], "Users") {
+			continue
+		}
+		if !wellKnownUserFolders[strings.ToLower(segs[3])] {
+			continue
+		}
+		out = append(out, key)
+	}
+	return out
+}
+
 // wantedShortcuts lists the signposts for this computer's folder: one per
 // drive, and one per folder the user chose to back up, so the folders they
 // know are at the entrance instead of several levels down. Each points at a
@@ -42,7 +69,11 @@ func (e *Engine) wantedShortcuts(set config.Settings, folders map[string]string)
 		segs := strings.Split(s.prefix, "/")
 		heads[segs[0]] = true
 		if len(segs) < 2 {
-			continue // a whole drive: the drive shortcut already covers it
+			// A whole drive: the drive shortcut alone would still leave the
+			// user several clicks from their own folders, so point at those
+			// too.
+			prefixes = append(prefixes, userFolderShortcuts(segs[0], folders)...)
+			continue
 		}
 		prefixes = append(prefixes, s.prefix)
 	}
@@ -139,8 +170,9 @@ func (e *Engine) ensureShortcuts(ctx context.Context, set config.Settings) {
 			continue
 		}
 		if _, err := e.Drive.CreateShortcut(ctx, compID, name, target, map[string]string{"selvasync": ShortcutProp}); err != nil {
+			// one shortcut failing must not cost the user the others
 			e.Log.Warn("shortcut_failed", map[string]string{"name": name})
-			return
+			continue
 		}
 	}
 }
