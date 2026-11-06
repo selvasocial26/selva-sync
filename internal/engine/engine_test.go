@@ -350,9 +350,14 @@ func TestSystemExcludesAlwaysApply(t *testing.T) {
 	if !excluded(rules, "a.tmp", "x/a.tmp", "D/x/a.tmp") {
 		t.Errorf("the user's own rules must still apply")
 	}
-	// no drift: every drive-top default is mandatory
+	// no drift: every drive-top default is mandatory, except the few the
+	// user is allowed to switch off (Downloads, profile dot-folders)
+	optional := map[string]bool{}
+	for _, p := range config.OptionalExcludes {
+		optional[p] = true
+	}
 	for _, p := range config.DefaultExcludes {
-		if !strings.HasPrefix(p, "/") {
+		if !strings.HasPrefix(p, "/") || optional[p] {
 			continue
 		}
 		found := false

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.8 (7 Nov 2026)
+
+- **Downloads is no longer backed up.** Installers and unpacked software (`SelvaSync.exe`, an extracted project folder, a `vendor` tree with thousands of tiny files) were filling the backup with things that can be downloaded again. `C:\Users\<you>\Downloads` is now skipped by default. It is an ordinary rule, so you can delete it under *Safety → What to skip* if you do want Downloads backed up; the Windows system areas stay out either way.
+- **Per-app settings folders are skipped**, for example `C:\Users\<you>\.claude` or `.vscode`. These are dot-folders an app rewrites constantly, not your own work. Also removable like any other rule.
+- **"Back up whole computer" now gets folder shortcuts too.** Before, backing up a whole drive left only one shortcut (*Local Disk (C)*), so you were still clicking `Users › <you> › Documents` every time. Your Desktop, Documents, Pictures, Videos, Music and OneDrive folders now each get a shortcut at the entrance of the computer folder. Only folders that were really backed up get one.
+- Fixed: if one shortcut could not be created, none of the remaining ones were created either. Each is now attempted on its own.
+
 ## 1.2.7 (1 Nov 2026)
 
 - **Shortcuts to your folders** in Google Drive. Your computer's folder now also shows a shortcut for each drive (*Local Disk (C)*) and for each folder you chose to back up (*Documents*, *Accounts*), so you reach your files in one click instead of opening every level of the path. Nothing moves: the full folder tree is exactly as before and the shortcuts sit beside it. They hold no data and use no Google Drive space. Two chosen folders with the same name are told apart by the folder above them, for example *Work - Reports* and *Old - Reports*. Shortcuts you create yourself are never touched.

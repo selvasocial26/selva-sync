@@ -96,8 +96,16 @@ var DefaultExcludes = []string{
 	"/OneDriveTemp", "/pagefile.sys", "/hiberfil.sys", "/swapfile.sys", "/DumpStack.log*",
 	"/Users/*/AppData", "/Users/*/.cache", "/Users/Default", "/Users/All Users",
 	"/Documents and Settings",
+	// installers and unpacked downloads: software, not the user's own work
+	"/Users/*/Downloads",
+	// per-app state and caches kept as dot-folders in the user's profile
+	"/Users/*/.*",
 }
 
+// Downloads and the profile dot-folders are left out of SystemExcludes on
+// purpose: they are skipped by default, but a user who wants them backed up
+// can delete the rule, which must never be true of a Windows system area.
+//
 // SystemExcludes are the Windows system areas that are never backed up, even
 // when a saved exclude list (from an older version or a hand edit) leaves them
 // out. It is every drive-top rule of DefaultExcludes, so the two lists cannot
@@ -105,9 +113,13 @@ var DefaultExcludes = []string{
 var SystemExcludes = systemExcludes()
 
 func systemExcludes() []string {
+	optional := map[string]bool{}
+	for _, p := range OptionalExcludes {
+		optional[p] = true
+	}
 	out := make([]string, 0, len(DefaultExcludes))
 	for _, p := range DefaultExcludes {
-		if strings.HasPrefix(p, "/") {
+		if strings.HasPrefix(p, "/") && !optional[p] {
 			out = append(out, p)
 		}
 	}
@@ -130,6 +142,12 @@ var oldDefaults = map[string]string{
 	"hiberfil.sys": "/hiberfil.sys", "swapfile.sys": "/swapfile.sys", ".cache": "/Users/*/.cache",
 	"*.part": "", "*.lock": "", ".git": "",
 }
+
+// OptionalExcludes are rules introduced after a user's settings file was first
+// written. They are added on upgrade only when the saved list still carries
+// the default Windows rules, so a list the user has emptied or rewritten by
+// hand is left exactly as it is.
+var OptionalExcludes = []string{"/Users/*/Downloads", "/Users/*/.*"}
 
 // Limits keep numbers in a safe range.
 const (
@@ -376,6 +394,14 @@ func migrateExcludes(in []string) []string {
 			continue
 		}
 		out = append(out, v)
+	}
+	if have["/windows"] { // still a default-shaped list: take the new rules too
+		for _, v := range OptionalExcludes {
+			if !have[strings.ToLower(v)] {
+				out = append(out, v)
+				have[strings.ToLower(v)] = true
+			}
+		}
 	}
 	return out
 }
