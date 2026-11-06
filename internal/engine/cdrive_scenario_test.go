@@ -29,6 +29,8 @@ var cDriveTree = []string{
 	"Users/Admin/Videos/clip.mp4",
 	"Users/Admin/Music/song.mp3",
 	"Users/Admin/Downloads/SelvaSync.exe",
+	"Users/Admin/Downloads/bank-statement.pdf",
+	"Users/Admin/Downloads/scanned-id.jpg",
 	"Users/Admin/Downloads/EmpowerNGO-main/test.v.02/storage/framework/cache/data/.gitignore",
 	"Users/Admin/Downloads/archive/vendor/laravel/framework/src/Illuminate/Mail/resources/views/text/table.blade.php",
 	"Users/Admin/.claude/remote-settings.json.synced-at",
@@ -49,7 +51,6 @@ var wantSkipped = map[string]bool{
 	"pagefile.sys":                           true,
 	"hiberfil.sys":                           true,
 	"Users/Admin/Downloads/SelvaSync.exe":    true,
-	"Users/Admin/Downloads/EmpowerNGO-main/test.v.02/storage/framework/cache/data/.gitignore":                         true,
 	"Users/Admin/Downloads/archive/vendor/laravel/framework/src/Illuminate/Mail/resources/views/text/table.blade.php": true,
 	"Users/Admin/.claude/remote-settings.json.synced-at":                                                              true,
 	"Users/Admin/.cache/pip/http/a/b":                                                                                 true,
@@ -91,23 +92,37 @@ func TestCDriveWholeComputerExcludes(t *testing.T) {
 	}
 }
 
-// A user who deletes the Downloads rule gets Downloads back; the Windows
-// system areas stay out whatever the saved list says.
-func TestCDriveDownloadsRuleIsOptional(t *testing.T) {
-	var kept []string
-	for _, r := range config.DefaultExcludes {
-		if r != "/Users/*/Downloads" {
-			kept = append(kept, r)
+// Downloads itself is backed up: the things people actually keep there must
+// survive, while the software that can be fetched again must not.
+func TestCDriveDownloadsKeepsRealFiles(t *testing.T) {
+	rules := config.WithSystemExcludes(config.Defaults().Excludes)
+	got := skippedOnCDrive(t, rules)
+	for _, p := range []string{"Users/Admin/Downloads/bank-statement.pdf", "Users/Admin/Downloads/scanned-id.jpg"} {
+		if got[p] {
+			t.Errorf("a real file in Downloads must be backed up: %s", p)
 		}
 	}
-	rules := config.WithSystemExcludes(kept)
-	got := skippedOnCDrive(t, rules)
-	if got["Users/Admin/Downloads/SelvaSync.exe"] {
-		t.Error("Downloads must come back when the user removes the rule")
-	}
-	for _, p := range []string{"Windows/System32/drivers/etc/hosts", "pagefile.sys", "Program Files/Google/Chrome/chrome.exe"} {
+	for _, p := range []string{
+		"Users/Admin/Downloads/SelvaSync.exe",
+		"Users/Admin/Downloads/archive/vendor/laravel/framework/src/Illuminate/Mail/resources/views/text/table.blade.php",
+	} {
 		if !got[p] {
-			t.Errorf("Windows system area must stay out even so: %s", p)
+			t.Errorf("software in Downloads must be skipped: %s", p)
+		}
+	}
+}
+
+// An installer is software wherever it sits, not only in Downloads.
+func TestInstallersSkippedAnywhere(t *testing.T) {
+	rules := config.WithSystemExcludes(config.Defaults().Excludes)
+	for _, name := range []string{"setup.exe", "office.msi", "ubuntu.iso", "backup.vhdx", "app.apk"} {
+		if !excluded(rules, name, "Users/Admin/Documents/"+name, "Users/Admin/Documents/"+name) {
+			t.Errorf("installer or disk image must be skipped: %s", name)
+		}
+	}
+	for _, name := range []string{"report.docx", "photo.jpg", "notes.txt", "data.csv"} {
+		if excluded(rules, name, "Users/Admin/Documents/"+name, "Users/Admin/Documents/"+name) {
+			t.Errorf("an ordinary file must be backed up: %s", name)
 		}
 	}
 }
@@ -147,8 +162,8 @@ func TestCDriveWholeComputerShortcuts(t *testing.T) {
 			t.Errorf("shortcut %q = %q, want %q (all: %v)", name, got[name], want, got)
 		}
 	}
-	if _, ok := got["Downloads"]; ok {
-		t.Error("Downloads is not backed up, so it must get no shortcut")
+	if got["Downloads"] != folders[head+"/Users/Admin/Downloads"] {
+		t.Errorf("Downloads is backed up, so it must get a shortcut: %v", got)
 	}
 	if _, ok := got["Accounts"]; ok {
 		t.Error("only well-known user folders get automatic shortcuts")
