@@ -88,7 +88,10 @@ var DefaultExcludes = []string{
 	// temporary and system helper files (anywhere)
 	"~$*", "*.tmp", "*.temp", "Thumbs.db", "desktop.ini", ".DS_Store",
 	"*.crdownload", "*.partial", "NTUSER.DAT*", "ntuser.dat.LOG*", "UsrClass.dat*",
-	"node_modules", "__pycache__",
+	"node_modules", "__pycache__", "vendor", ".git", ".venv",
+	// installers and disk images: software that can be downloaded again
+	"*.exe", "*.msi", "*.msix", "*.appx", "*.apk",
+	"*.iso", "*.img", "*.vhd", "*.vhdx", "*.dmg", "*.pkg", "*.deb", "*.rpm",
 	// Windows system areas (top of the drive only)
 	"/Windows", "/Windows.old", "/Program Files", "/Program Files (x86)", "/ProgramData",
 	"/$Recycle.Bin", "/System Volume Information", "/Recovery", "/PerfLogs",
@@ -96,8 +99,6 @@ var DefaultExcludes = []string{
 	"/OneDriveTemp", "/pagefile.sys", "/hiberfil.sys", "/swapfile.sys", "/DumpStack.log*",
 	"/Users/*/AppData", "/Users/*/.cache", "/Users/Default", "/Users/All Users",
 	"/Documents and Settings",
-	// installers and unpacked downloads: software, not the user's own work
-	"/Users/*/Downloads",
 	// per-app state and caches kept as dot-folders in the user's profile
 	"/Users/*/.*",
 }
@@ -140,14 +141,18 @@ var oldDefaults = map[string]string{
 	"programdata": "/ProgramData", "appdata": "/Users/*/AppData", "$recycle.bin": "/$Recycle.Bin",
 	"system volume information": "/System Volume Information", "pagefile.sys": "/pagefile.sys",
 	"hiberfil.sys": "/hiberfil.sys", "swapfile.sys": "/swapfile.sys", ".cache": "/Users/*/.cache",
-	"*.part": "", "*.lock": "", ".git": "",
+	"*.part": "", "*.lock": "", "/users/*/downloads": "",
 }
 
 // OptionalExcludes are rules introduced after a user's settings file was first
 // written. They are added on upgrade only when the saved list still carries
 // the default Windows rules, so a list the user has emptied or rewritten by
 // hand is left exactly as it is.
-var OptionalExcludes = []string{"/Users/*/Downloads", "/Users/*/.*"}
+var OptionalExcludes = []string{
+	"/Users/*/.*", "vendor", ".git", ".venv",
+	"*.exe", "*.msi", "*.msix", "*.appx", "*.apk",
+	"*.iso", "*.img", "*.vhd", "*.vhdx", "*.dmg", "*.pkg", "*.deb", "*.rpm",
+}
 
 // Limits keep numbers in a safe range.
 const (
