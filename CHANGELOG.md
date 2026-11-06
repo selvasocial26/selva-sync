@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.9 (7 Nov 2026)
+
+- **Downloads is backed up again, but software in it is not.** 1.2.8 skipped the whole `Downloads` folder, which also dropped the things people really keep there: statements, scans, photos. Downloads is now backed up as normal. Instead, installers and disk images (`.exe`, `.msi`, `.msix`, `.appx`, `.apk`, `.iso`, `.img`, `.vhd`, `.vhdx`, `.dmg`, `.pkg`, `.deb`, `.rpm`) are skipped wherever they sit, and dependency folders (`vendor`, `.git`, `.venv`, on top of `node_modules` and `__pycache__`) are skipped by name. An unpacked project no longer uploads thousands of library files.
+- The `C:\Users\<you>\Downloads` rule added in 1.2.8 is removed from your saved settings on upgrade. If you want Downloads skipped entirely, add the rule back under *Safety → What to skip*.
+- Downloads now gets a shortcut in your computer folder too, alongside Desktop, Documents, Pictures, Videos, Music and OneDrive.
+
 ## 1.2.8 (7 Nov 2026)
 
 - **Downloads is no longer backed up.** Installers and unpacked software (`SelvaSync.exe`, an extracted project folder, a `vendor` tree with thousands of tiny files) were filling the backup with things that can be downloaded again. `C:\Users\<you>\Downloads` is now skipped by default. It is an ordinary rule, so you can delete it under *Safety → What to skip* if you do want Downloads backed up; the Windows system areas stay out either way.
