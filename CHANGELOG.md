@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.4.0 (7 Nov 2026)
+
+- **Unpacked websites and projects are left out properly now.** A folder stopped counting as software as soon as it held more than five photos or documents, so a copied website with a few images in it was backed up in full. A folder is now judged by what it is mostly made of: a website with 200 files and 8 photos is still a website, while a folder of 8 reports and 3 scripts is yours and is backed up as before.
+- **Files and folders whose name starts with a dot are skipped.** These are working files that programs keep for themselves — `.Rhistory`, Adobe's licence files, Zotero's search cache, and the OneDrive lock file that made backups report a failed file.
+- **A folder marked `CACHEDIR.TAG` is skipped**, which is how programs say "this folder is my cache".
+- Also skipped: `catalog.log`, `*.search-ms`, and folders holding `requirements.txt`, `Pipfile` or `environment.yml`, which mark a project the same way `package.json` does.
+- **A database file (`.sql`) inside a project folder is backed up again.** It is usually an export of someone's own data, not something a program rebuilds.
+- **Backups now upload folder by folder** instead of smallest file first, so you see your own documents going up at the start instead of several minutes of tiny system files.
+- **Open log folder** works: it creates the folder if it is missing and asks File Explorer directly. The folder's full path is now shown beside the button as well.
+- The backup folder page now says plainly that a shared drive can be opened by everyone with access to it, while your own My Drive can only be opened by you.
+
 ## 1.3.1 (7 Nov 2026)
 
 - **A project inside one of your own folders no longer gets backed up.** A folder with your documents in it is still backed up, as before — but if it also holds a code project, the project's own files (`package.json`, `.js`, `.ts`, `.php`, `.css` and the like) are left out of it. Before this, a research folder that happened to contain a small website brought the whole project along with it.
