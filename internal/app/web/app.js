@@ -219,6 +219,7 @@
     fillInputs();
     renderHome();
     renderSources();
+    renderSkipped();
     renderDerived();
     renderChips();
     renderAccountSettings();
@@ -415,6 +416,40 @@
     return [head].concat(segs).join("/");
   }
 
+  async function renderSkipped() {
+    const card = $("#skippedCard"), list = $("#skippedList"), note = $("#skippedNote");
+    const rows = (await api("/api/skipped").catch(() => null)) || [];
+    const inc = S.settings.includeFolders || [];
+    card.classList.toggle("hidden", !rows.length && !inc.length);
+    note.classList.toggle("hidden", !rows.length);
+    if (rows.length) {
+      note.textContent = t("skipped_note", { n: rows.length });
+      note.onclick = () => { show("folders"); $("#skippedCard").scrollIntoView({ block: "center" }); };
+      note.style.cursor = "pointer";
+    }
+    list.innerHTML = "";
+    for (const r of rows) {
+      const row = el("div", { class: "source-row" });
+      row.append(el("div", { class: "path", text: r.path }));
+      row.append(el("div", { class: "hint", text: t("skipped_files", { n: num(r.files) + (r.more ? "+" : ""), sz: bytes(r.bytes) }) }));
+      row.append(el("button", { class: "btn small", text: t("btn_include_folder"), onclick: async () => {
+        await api("/api/include", { path: r.path });
+        await refreshState();
+        toast(t("included_toast"));
+      } }));
+      list.append(row);
+    }
+    for (const f of inc) {
+      const row = el("div", { class: "source-row" });
+      row.append(el("div", { class: "path", text: f }, el("span", { class: "tag", text: t("included_tag") })));
+      row.append(el("button", { class: "btn small", text: t("btn_exclude_folder"), onclick: async () => {
+        await api("/api/include", { path: f, remove: true });
+        await refreshState();
+      } }));
+      list.append(row);
+    }
+  }
+
   function renderSources() {
     const list = $("#sourceList");
     list.innerHTML = "";
@@ -604,7 +639,8 @@
     renderSources();
     renderHome();
     toast(t("whole_pc_added", { drives: label }));
-    if (S.account) runPreview(); // size and free Google Drive space before the first upload
+    // No preview is forced here: Back up now means back up. Anyone who wants
+    // the size and free space first can press Preview.
   }
 
   // ---------- preview ----------
@@ -731,7 +767,7 @@
     $("#langPick").addEventListener("change", (e) => changeLang(e.target.value));
     $("#langPick2").addEventListener("change", (e) => changeLang(e.target.value));
     // the very first backup shows how much will be uploaded before starting
-    $("#btnSync").addEventListener("click", () => (S.lastSuccess ? startSync({}) : runPreview()));
+    $("#btnSync").addEventListener("click", () => startSync({}));
     $("#btnForce").addEventListener("click", () => startSync({ force: true }));
     $("#btnPreview").addEventListener("click", runPreview);
     $("#btnStop").addEventListener("click", () => api("/api/stop", {}));
