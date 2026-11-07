@@ -439,5 +439,7 @@
   "btn_include_folder": "Back up this folder anyway",
   "btn_exclude_folder": "Stop backing up",
   "included_tag": "Backed up",
-  "included_toast": "This folder will be backed up from the next backup."
+  "included_toast": "This folder will be backed up from the next backup.",
+  "log_folder": "Log folder:",
+  "shared_drive_warn": "A shared drive can be opened by everyone who has access to it. Your own My Drive can only be opened by you."
 }
