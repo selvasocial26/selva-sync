@@ -147,6 +147,41 @@ func mostlyCode(dir string) bool {
 	return float64(code)/float64(code+other) >= codeShare
 }
 
+// hasMarker reports whether a folder carries a developer's marker file. Such
+// a folder is a software project even when the user's own documents keep it
+// in the backup: the documents are theirs, the code is not.
+func hasMarker(entries []fs.DirEntry) bool {
+	for _, e := range entries {
+		if !e.IsDir() && projectMarkers[strings.ToLower(e.Name())] {
+			return true
+		}
+	}
+	return false
+}
+
+// isCodeFile reports whether one file belongs to the software in a folder
+// rather than to the person using it. Only used inside a folder that holds
+// a marker file, never on its own.
+func isCodeFile(name string) bool {
+	n := strings.ToLower(name)
+	return projectMarkers[n] || codeExts[filepath.Ext(n)]
+}
+
+// underAnyDir reports whether path sits inside one of the folders in set.
+func underAnyDir(path string, set map[string]bool) bool {
+	if len(set) == 0 {
+		return false
+	}
+	for d := filepath.Dir(path); ; d = filepath.Dir(d) {
+		if set[d] {
+			return true
+		}
+		if parent := filepath.Dir(d); parent == d {
+			return false
+		}
+	}
+}
+
 // included reports whether path is one of the folders the user asked for by
 // hand, or sits inside one. Inside such a folder nothing is skipped: the
 // user already said what they wanted.
