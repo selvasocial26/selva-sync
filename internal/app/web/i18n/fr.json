@@ -431,5 +431,13 @@
   "whole_pc_none": "Aucun disque interne trouvé.",
   "cloud_files": "Sauvegarder aussi les fichiers OneDrive disponibles uniquement en ligne",
   "cloud_files_d": "Les fichiers avec l'icône de nuage sont téléchargés un par un pour la sauvegarde, puis remis en ligne uniquement juste après : aucun espace disque n'est occupé. Cela utilise des données internet pour le téléchargement et l'envoi.",
-  "msg_install_confirm": "Installer Selva Sync {new} pour votre utilisateur Windows ?\n\nIl se copiera dans le dossier Programs de votre utilisateur, ajoutera un raccourci dans le menu Démarrer et une entrée dans « Applications », et démarrera avec Windows (désactivable dans Planification). Aucun droit administrateur n'est nécessaire. Désinstallez-le à tout moment depuis Paramètres Windows > Applications."
+  "msg_install_confirm": "Installer Selva Sync {new} pour votre utilisateur Windows ?\n\nIl se copiera dans le dossier Programs de votre utilisateur, ajoutera un raccourci dans le menu Démarrer et une entrée dans « Applications », et démarrera avec Windows (désactivable dans Planification). Aucun droit administrateur n'est nécessaire. Désinstallez-le à tout moment depuis Paramètres Windows > Applications.",
+  "skipped_title": "Programmes non sauvegardés",
+  "skipped_intro": "Ces dossiers contiennent des programmes ou des fichiers d'application : ils sont laissés de côté pour que la sauvegarde reste petite et rapide. Vos documents, photos et autres fichiers ne sont pas concernés. Si vous avez besoin de l'un de ces dossiers, rajoutez-le ici.",
+  "skipped_note": "{n} dossiers de programmes ne sont pas sauvegardés. Voir la liste.",
+  "skipped_files": "{n} fichiers · {sz}",
+  "btn_include_folder": "Sauvegarder ce dossier quand même",
+  "btn_exclude_folder": "Ne plus sauvegarder",
+  "included_tag": "Sauvegardé",
+  "included_toast": "Ce dossier sera sauvegardé à partir de la prochaine sauvegarde."
 }
