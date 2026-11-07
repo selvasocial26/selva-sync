@@ -52,6 +52,7 @@ var wantSkipped = map[string]bool{
 	"hiberfil.sys":                           true,
 	"Users/Admin/Downloads/SelvaSync.exe":    true,
 	"Users/Admin/Downloads/archive/vendor/laravel/framework/src/Illuminate/Mail/resources/views/text/table.blade.php": true,
+	"Users/Admin/Downloads/EmpowerNGO-main/test.v.02/storage/framework/cache/data/.gitignore":                         true,
 	"Users/Admin/.claude/remote-settings.json.synced-at":                                                              true,
 	"Users/Admin/.cache/pip/http/a/b":                                                                                 true,
 	"Users/Admin/AppData/Roaming/app/state.json":                                                                      true,
