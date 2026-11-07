@@ -439,5 +439,7 @@
   "btn_include_folder": "Copiar esta carpeta de todos modos",
   "btn_exclude_folder": "Dejar de copiar",
   "included_tag": "Con copia",
-  "included_toast": "Esta carpeta se copiará a partir de la próxima copia de seguridad."
+  "included_toast": "Esta carpeta se copiará a partir de la próxima copia de seguridad.",
+  "log_folder": "Carpeta de registros:",
+  "shared_drive_warn": "Una unidad compartida puede abrirla cualquiera que tenga acceso a ella. Tu propio Mi unidad solo puedes abrirlo tú."
 }
