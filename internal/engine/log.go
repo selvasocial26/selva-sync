@@ -40,6 +40,7 @@ var english = map[string]string{
 	"relocated":           "Put back in its place on Drive: {path}",
 	"restored_from_trash": "{n} files that were deleted on Google Drive will be uploaded again",
 	"failed":              "Could not upload {path}: {error}",
+	"skipped_empty":       "Kept the backup copy of {path}: the file on this PC reads as empty",
 	"skipped_big":         "Skipped (larger than limit): {path} ({size})",
 	"skipped_cap":         "Skipped (monthly data limit reached): {path}",
 	"cap_reached":         "Monthly data limit reached. Remaining files will upload next month or when you raise the limit.",
