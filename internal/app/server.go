@@ -52,6 +52,8 @@ func (a *App) routes() http.Handler {
 		"POST /api/uninstall":      a.apiUninstall,
 		"POST /api/reload-langs":   a.apiReloadLangs,
 		"GET /api/preview":         a.apiPreview,
+		"GET /api/skipped":         a.apiSkipped,
+		"POST /api/include":        a.apiInclude,
 		"POST /api/reset-excludes": a.apiResetExcludes,
 		"POST /api/accept-disk":    a.apiAcceptDisk,
 		"POST /api/picker/start":   a.apiPickerStart,
@@ -241,6 +243,7 @@ func (a *App) apiState(w http.ResponseWriter, r *http.Request) {
 		"languages":   a.I18n.Languages(),
 		"dataDir":     a.Store.Dir,
 		"hasPreview":  a.Engine.LastPreview() != nil,
+		"skipped":     len(a.Engine.SkippedSoftware()),
 		"redirectUri": a.callbackURL(),
 	}
 	a.featureState(resp, set)
@@ -553,6 +556,46 @@ func (a *App) apiReloadLangs(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) apiResetExcludes(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, config.DefaultExcludes)
+}
+
+// apiSkipped lists the software folders the last scan left out.
+func (a *App) apiSkipped(w http.ResponseWriter, r *http.Request) {
+	out := a.Engine.SkippedSoftware()
+	if out == nil {
+		out = []config.SkippedFolder{}
+	}
+	writeJSON(w, out)
+}
+
+// apiInclude backs up one of those folders after all. The folder is added to
+// the settings, so every later backup includes it without asking again.
+func (a *App) apiInclude(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Path   string `json:"path"`
+		Remove bool   `json:"remove"`
+	}
+	json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&req)
+	p := config.CleanSourcePath(req.Path)
+	if p == "" {
+		writeErr(w, 400, "bad_request")
+		return
+	}
+	set := a.Settings()
+	var out []string
+	for _, f := range set.IncludeFolders {
+		if !strings.EqualFold(strings.TrimSpace(f), p) {
+			out = append(out, f)
+		}
+	}
+	if !req.Remove {
+		out = append(out, p)
+	}
+	set.IncludeFolders = out
+	if err := a.saveSettings(set, true); err != nil {
+		writeErr(w, 500, "save_failed")
+		return
+	}
+	writeJSON(w, map[string]bool{"ok": true})
 }
 
 func (a *App) apiAcceptDisk(w http.ResponseWriter, r *http.Request) {
