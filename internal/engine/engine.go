@@ -264,6 +264,13 @@ func (e *Engine) Status() Status {
 	return s
 }
 
+// SkippedSoftware returns the folders the last scan left out.
+func (e *Engine) SkippedSoftware() []config.SkippedFolder {
+	e.smu.Lock()
+	defer e.smu.Unlock()
+	return append([]config.SkippedFolder(nil), e.state.Skipped...)
+}
+
 // LastPreview returns the most recent complete dry-run result.
 func (e *Engine) LastPreview() *Preview {
 	e.mu.Lock()
@@ -585,8 +592,15 @@ func (e *Engine) Run(ctx context.Context, opt Options) config.RunSummary {
 			deepMax = deepManualMax
 		}
 	}
-	plan, missing, skippedBig := e.scan(ctx, set, deepMax)
+	plan, missing, skippedBig, software := e.scan(ctx, set, deepMax)
 	sum.Skipped += skippedBig
+	// Remember the software that was left out, so the app can show it and
+	// the user can put a folder back. A preview counts too: it is the same
+	// scan, and seeing the list before the first backup is the point.
+	e.smu.Lock()
+	e.state.Skipped = software
+	e.smu.Unlock()
+	e.markDirty()
 	if ctx.Err() != nil {
 		sum.Result = "stopped"
 		return sum
@@ -1696,7 +1710,7 @@ type goneFile struct {
 	ent config.FileEntry
 }
 
-func (e *Engine) scan(ctx context.Context, set config.Settings, deepMax int64) (plan []*item, missing []string, skippedBig int) {
+func (e *Engine) scan(ctx context.Context, set config.Settings, deepMax int64) (plan []*item, missing []string, skippedBig int, software []config.SkippedFolder) {
 	rules := config.WithSystemExcludes(set.Excludes)
 	maxSize := int64(set.MaxFileSizeMB) << 20
 	e.smu.Lock()
@@ -1817,6 +1831,19 @@ func (e *Engine) scan(ctx context.Context, set config.Settings, deepMax int64) (
 					return fs.SkipDir
 				}
 				return nil
+			}
+			// Programs and unpacked projects are left out without asking,
+			// and listed afterwards so the user can put one back. A folder
+			// the user included by hand is never examined.
+			if d.IsDir() && len(software) < maxSoftwareListed && !included(p, set.IncludeFolders) {
+				if kind := softwareKind(p, readDirEntries(p)); kind != "" {
+					protected = append(protected, key)
+					files, bytes, more := folderSize(p)
+					software = append(software, config.SkippedFolder{
+						Path: p, Reason: kind, Files: files, Bytes: bytes, More: more,
+					})
+					return fs.SkipDir
+				}
 			}
 			info, ierr := d.Info()
 			if ierr != nil {
