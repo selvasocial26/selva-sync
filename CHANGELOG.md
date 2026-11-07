@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0 (7 Nov 2026)
+
+- **Programs are no longer backed up.** Installed programs, downloaded software and unpacked projects are left out automatically, wherever they sit on any drive. A folder counts as software when it holds a developer's marker file (`package.json`, `composer.json`, `go.mod` and the like), when almost everything in it is source code, or when it holds a program `.exe` with its `.dll` files. Before this, one unpacked project could add tens of thousands of tiny files to a backup and make every later backup slower.
+- **Your own files always win.** A folder holding more than a few documents, photos or videos is never treated as software, even if it contains a marker file or a script. Nothing is asked during a backup and no message interrupts you.
+- **A list of what was left out**, on the Folders page, with the size of each folder and a **Back up this folder anyway** button. Including a folder covers everything inside it, now and later, and nothing in it is skipped again. The home screen carries one quiet line pointing at the list.
+- **Back up now always backs up.** It used to show a preview first until one backup had finished, so a backup that was stopped left the button previewing for ever. Preview is now only the Preview button.
+- Stopping a backup stops that run only; the next scheduled backup goes ahead as usual (unchanged, but worth saying).
+
 ## 1.2.9 (7 Nov 2026)
 
 - **Downloads is backed up again, but software in it is not.** 1.2.8 skipped the whole `Downloads` folder, which also dropped the things people really keep there: statements, scans, photos. Downloads is now backed up as normal. Instead, installers and disk images (`.exe`, `.msi`, `.msix`, `.appx`, `.apk`, `.iso`, `.img`, `.vhd`, `.vhdx`, `.dmg`, `.pkg`, `.deb`, `.rpm`) are skipped wherever they sit, and dependency folders (`vendor`, `.git`, `.venv`, on top of `node_modules` and `__pycache__`) are skipped by name. An unpacked project no longer uploads thousands of library files.
