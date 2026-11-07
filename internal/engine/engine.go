@@ -1795,6 +1795,9 @@ func (e *Engine) scan(ctx context.Context, set config.Settings, deepMax int64) (
 		}
 		present := map[string]bool{}
 		dirs := map[string]bool{prefix: true}
+		// Folders kept for the user's documents that still hold a project
+		// marker: their documents are backed up, their code is not.
+		mixed := map[string]bool{}
 		var protected []string
 		rootFailed := false
 		var srcNews []*item
@@ -1835,14 +1838,26 @@ func (e *Engine) scan(ctx context.Context, set config.Settings, deepMax int64) (
 			// Programs and unpacked projects are left out without asking,
 			// and listed afterwards so the user can put one back. A folder
 			// the user included by hand is never examined.
-			if d.IsDir() && len(software) < maxSoftwareListed && !included(p, set.IncludeFolders) {
-				if kind := softwareKind(p, readDirEntries(p)); kind != "" {
+			if !included(p, set.IncludeFolders) {
+				if d.IsDir() {
+					ents := readDirEntries(p)
+					if kind := softwareKind(p, ents); kind != "" {
+						protected = append(protected, key)
+						if len(software) < maxSoftwareListed {
+							files, bytes, more := folderSize(p)
+							software = append(software, config.SkippedFolder{
+								Path: p, Reason: kind, Files: files, Bytes: bytes, More: more,
+							})
+						}
+						return fs.SkipDir
+					}
+					if hasMarker(ents) {
+						mixed[p] = true
+					}
+				} else if isCodeFile(d.Name()) && underAnyDir(p, mixed) {
+					// a project's own file inside a folder kept for its documents
 					protected = append(protected, key)
-					files, bytes, more := folderSize(p)
-					software = append(software, config.SkippedFolder{
-						Path: p, Reason: kind, Files: files, Bytes: bytes, More: more,
-					})
-					return fs.SkipDir
+					return nil
 				}
 			}
 			info, ierr := d.Info()
@@ -1883,6 +1898,13 @@ func (e *Engine) scan(ctx context.Context, set config.Settings, deepMax int64) (
 				if !ent.Seen {
 					seenKeys = append(seenKeys, key)
 				}
+			case size == 0 && ent.Size > 0:
+				// The file reads as empty now but the backup has content.
+				// That is usually a file still being written or a cloud
+				// placeholder, and replacing a real file with an empty one
+				// would destroy the only copy. Keep what is on Drive.
+				protected = append(protected, key)
+				e.Log.Warn("skipped_empty", map[string]string{"path": p})
 			case ent.Size != size || ent.MTime != mt:
 				plan = append(plan, &item{op: "update", key: key, local: p, size: size, mtime: mt, existing: ent})
 			default:
