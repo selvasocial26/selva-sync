@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.1 (7 Nov 2026)
+
+- **A project inside one of your own folders no longer gets backed up.** A folder with your documents in it is still backed up, as before — but if it also holds a code project, the project's own files (`package.json`, `.js`, `.ts`, `.php`, `.css` and the like) are left out of it. Before this, a research folder that happened to contain a small website brought the whole project along with it.
+- **A file that reads as empty can no longer replace a backup that has content.** If a file on the PC is 0 bytes but the copy in Drive is not, the copy in Drive is kept and a line is written to the log. This protects files that are being written at that moment, and cloud files that have not been downloaded yet.
+- Working files that apps rebuild by themselves are skipped: Zotero's search cache (`.zotero-ft-cache`, `.zotero-ft-unprocessed`), photo catalogue files (`catalog.lock`, `.lightcraft-thumbs`), `ntuser.ini` and `Sti_Trace.log`.
+
 ## 1.3.0 (7 Nov 2026)
 
 - **Programs are no longer backed up.** Installed programs, downloaded software and unpacked projects are left out automatically, wherever they sit on any drive. A folder counts as software when it holds a developer's marker file (`package.json`, `composer.json`, `go.mod` and the like), when almost everything in it is source code, or when it holds a program `.exe` with its `.dll` files. Before this, one unpacked project could add tens of thousands of tiny files to a backup and make every later backup slower.
