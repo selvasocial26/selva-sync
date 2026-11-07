@@ -63,6 +63,7 @@
         <div class="tile"><div class="tile-label" data-i18n="tile_data"></div><div class="tile-value" id="tileData">—</div><div class="tile-sub" id="tileDataSub"></div></div>
         <div class="tile"><div class="tile-label" data-i18n="tile_drive"></div><div class="tile-value" id="tileDrive">—</div><div class="mini-bar"><div id="driveBar"></div></div><div class="tile-sub" id="tileDriveSub"></div></div>
       </div>
+      <p class="note hidden" id="skippedNote"></p>
       <div class="card account-card" id="accountCard"></div>
     </section>
 
@@ -74,6 +75,11 @@
         <div id="sourceList" class="source-list"></div>
         <div class="actions"><button class="btn primary" id="btnAddFolder" data-i18n="btn_add_folder"></button> <button class="btn" id="btnWholePC" data-i18n="btn_whole_pc"></button></div>
         <p class="hint" data-i18n="whole_pc_hint"></p>
+      </div>
+      <div class="card hidden" id="skippedCard">
+        <h3 data-i18n="skipped_title"></h3>
+        <p class="muted" data-i18n="skipped_intro"></p>
+        <div id="skippedList" class="source-list"></div>
       </div>
       <div class="card">
         <h3 data-i18n="exclude_title"></h3>
