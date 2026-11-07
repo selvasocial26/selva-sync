@@ -18,6 +18,7 @@ const (
 	SoftwareProject = "project" // holds package.json, composer.json, go.mod ...
 	SoftwareCode    = "code"    // almost everything in it is source code
 	SoftwareProgram = "program" // an installed program: a .exe with its .dlls
+	SoftwareCache   = "cache"   // a folder a program marked as its own cache
 )
 
 // projectMarkers name a folder as the top of a software project. Each is a
@@ -29,7 +30,12 @@ var projectMarkers = map[string]bool{
 	"pom.xml": true, "build.gradle": true, "build.gradle.kts": true,
 	"gemfile": true, "pubspec.yaml": true, "tsconfig.json": true,
 	"cmakelists.txt": true, "dockerfile": true,
+	"requirements.txt": true, "pipfile": true, "environment.yml": true,
 }
+
+// cacheTag is the standard marker a program drops in a folder to say "this
+// is a cache, do not back it up". Honouring it is free and exact.
+const cacheTag = "CACHEDIR.TAG"
 
 // codeExts are file types that belong to software rather than to a person's
 // work. Images and PDFs are deliberately absent: they are what documents are
@@ -58,10 +64,21 @@ var documentExts = map[string]bool{
 	".m4a": true, ".dwg": true, ".psd": true,
 }
 
-// documentsKeepFolder is how many of the user's own documents a folder may
-// hold before it stops counting as software. A tidy project has none; a
-// person's working folder that happens to contain a script has several.
-const documentsKeepFolder = 5
+// A folder stops counting as software when the user's own documents are a
+// real part of it: more than a handful, AND a fair share of everything in
+// it. A website with 200 files and 8 photos in it is still a website; a
+// person's folder of 8 reports and 3 scripts is theirs.
+const (
+	documentsKeepFolder = 5
+	documentsKeepShare  = 0.2
+)
+
+// documentsRule reports whether the user's own files are enough of a folder
+// for it to be left alone.
+func documentsRule(docs, total int) bool {
+	return docs > documentsKeepFolder && total > 0 &&
+		float64(docs)/float64(total) >= documentsKeepShare
+}
 
 // codeShare and codeMinFiles decide the "almost all source code" test, which
 // catches unpacked websites and projects that carry no marker file.
@@ -78,13 +95,17 @@ const maxSoftwareListed = 200
 // softwareKind reports why a folder is software, or "" when it is not.
 // entries are the folder's own entries, already read by the caller.
 func softwareKind(dir string, entries []fs.DirEntry) string {
-	docs, exes, dlls := 0, 0, 0
+	docs, exes, dlls, total := 0, 0, 0, 0
 	marker := false
 	for _, e := range entries {
 		name := strings.ToLower(e.Name())
 		if e.IsDir() {
 			continue
 		}
+		if e.Name() == cacheTag {
+			return SoftwareCache
+		}
+		total++
 		ext := filepath.Ext(name)
 		switch {
 		case projectMarkers[name]:
@@ -97,9 +118,9 @@ func softwareKind(dir string, entries []fs.DirEntry) string {
 			dlls++
 		}
 	}
-	// The user's own documents win over every signal below: a folder with
-	// real work in it is backed up, whatever else it contains.
-	if docs > documentsKeepFolder {
+	// The user's own documents win over every signal below, when there are
+	// enough of them to say the folder is really theirs.
+	if documentsRule(docs, total) {
 		return ""
 	}
 	if marker {
@@ -141,7 +162,7 @@ func mostlyCode(dir string) bool {
 		}
 		return nil
 	})
-	if err != nil || seen < codeMinFiles || docs > documentsKeepFolder {
+	if err != nil || seen < codeMinFiles || documentsRule(docs, seen) {
 		return false
 	}
 	return float64(code)/float64(code+other) >= codeShare
@@ -164,6 +185,9 @@ func hasMarker(entries []fs.DirEntry) bool {
 // a marker file, never on its own.
 func isCodeFile(name string) bool {
 	n := strings.ToLower(name)
+	if filepath.Ext(n) == ".sql" {
+		return false // a database dump is data someone exported, not build output
+	}
 	return projectMarkers[n] || codeExts[filepath.Ext(n)]
 }
 
