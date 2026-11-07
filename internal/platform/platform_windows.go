@@ -87,8 +87,23 @@ func OpenURL(url string) {
 	procShellExecuteW.Call(0, uintptr(unsafe.Pointer(u16("open"))), uintptr(unsafe.Pointer(u16(url))), 0, 0, 1)
 }
 
-// OpenFolder shows a folder in File Explorer.
-func OpenFolder(path string) { OpenURL(path) }
+// OpenFolder shows a folder in File Explorer. It creates the folder first
+// (a folder that does not exist yet opens nothing and says nothing), and
+// asks Explorer by name rather than through the shell's file associations,
+// which some PCs have broken for folders.
+func OpenFolder(path string) {
+	if path == "" {
+		return
+	}
+	_ = os.MkdirAll(path, 0o700)
+	cmd := exec.Command("explorer.exe", path)
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	if err := cmd.Start(); err != nil {
+		OpenURL(path) // fall back to the shell
+		return
+	}
+	go cmd.Wait()
+}
 
 // OpenAppWindow shows the Selva Sync window. It uses Microsoft Edge in "app"
 // mode (a plain window with no tabs or address bar), which every Windows
