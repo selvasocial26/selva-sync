@@ -2089,8 +2089,10 @@ func (e *Engine) buildPreview(plan []*item, missing []string) {
 	e.Log.Info("preview_end", map[string]string{"new": itoa(pv.New), "update": itoa(pv.Update), "remove": itoa(pv.Remove), "bytes": HumanBytes(pv.Bytes), "move": itoa(pv.Move)})
 }
 
-// order: moves, then folder archives, file archives, then uploads
-// (smallest first so many files finish quickly).
+// order: moves, then folder archives, file archives, then uploads, folder
+// by folder in the order they appear on the PC. Size order finished more
+// files per minute but filled the first minutes of a backup with tiny
+// system files, so people watching it never saw their own work go up.
 func sortPlan(plan []*item) {
 	rank := func(op string) int {
 		switch op {
@@ -2107,9 +2109,6 @@ func sortPlan(plan []*item) {
 		ri, rj := rank(plan[i].op), rank(plan[j].op)
 		if ri != rj {
 			return ri < rj
-		}
-		if ri == 3 {
-			return plan[i].size < plan[j].size
 		}
 		return plan[i].key < plan[j].key
 	})
