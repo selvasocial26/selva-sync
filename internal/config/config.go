@@ -67,6 +67,9 @@ type Settings struct {
 	// CloudFiles also backs up OneDrive files that are only in the cloud.
 	// They are downloaded for the backup and made online-only again after.
 	CloudFiles bool `json:"cloudFiles"`
+	// IncludeFolders are folders the user chose to back up even though they
+	// hold software. Nothing inside them is examined or skipped.
+	IncludeFolders []string `json:"includeFolders,omitempty"`
 	// Managed lists settings fixed by the organisation's setup file.
 	Managed []string `json:"managed,omitempty"`
 }
@@ -381,6 +384,7 @@ func (s *Settings) Normalize() {
 		len(s.PickerURL) > 500 || strings.ContainsAny(s.PickerURL, " \t\r\n\"'<>\\") {
 		s.PickerURL = ""
 	}
+	s.IncludeFolders = cleanList(s.IncludeFolders, 200)
 	s.Managed = cleanList(s.Managed, 50)
 }
 
@@ -496,6 +500,16 @@ type RunSummary struct {
 	Bytes    int64     `json:"bytes"`
 }
 
+// SkippedFolder is one folder left out of the backup because it holds
+// software. The list is shown in the app so a user can put one back.
+type SkippedFolder struct {
+	Path   string `json:"path"`
+	Reason string `json:"reason"` // project, code, program
+	Files  int    `json:"files"`
+	Bytes  int64  `json:"bytes"`
+	More   bool   `json:"more"` // the count stopped at the limit
+}
+
 // State is what Selva Sync remembers between syncs so that unchanged files
 // are never uploaded twice and nothing is duplicated on Drive.
 type State struct {
@@ -527,7 +541,9 @@ type State struct {
 	LastAlert       time.Time                `json:"lastAlert"`
 	// KeptSeen remembers which Drive files were seen on this PC before the
 	// backup folder was changed, so going back to a folder keeps working.
-	KeptSeen     map[string]bool `json:"keptSeen,omitempty"`
+	KeptSeen map[string]bool `json:"keptSeen,omitempty"`
+	// Skipped is the software left out by the last scan.
+	Skipped      []SkippedFolder `json:"skipped,omitempty"`
 	FirstAttempt time.Time       `json:"firstAttempt"`         // first real sync attempt (for the overdue reminder)
 	LastPartial  time.Time       `json:"lastPartial"`          // last run that backed up files but had some problems
 	LocationID   string          `json:"locationId,omitempty"` // backup location the remote IDs belong to
