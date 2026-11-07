@@ -431,5 +431,13 @@
   "whole_pc_none": "No se encontraron unidades internas.",
   "cloud_files": "Copiar también los archivos de OneDrive que solo están en línea",
   "cloud_files_d": "Los archivos con el icono de nube se descargan uno a uno para la copia y vuelven a quedar solo en línea justo después, así que no ocupan espacio en disco. Usa datos de internet para la descarga y para la subida.",
-  "msg_install_confirm": "¿Instalar Selva Sync {new} para tu usuario de Windows?\n\nSe copiará en la carpeta Programs de tu usuario, añadirá un acceso directo en el menú Inicio y una entrada en \"Aplicaciones\", y se iniciará con Windows (puedes desactivarlo en Horario). No necesita permisos de administrador. Desinstálalo cuando quieras desde Configuración de Windows > Aplicaciones."
+  "msg_install_confirm": "¿Instalar Selva Sync {new} para tu usuario de Windows?\n\nSe copiará en la carpeta Programs de tu usuario, añadirá un acceso directo en el menú Inicio y una entrada en \"Aplicaciones\", y se iniciará con Windows (puedes desactivarlo en Horario). No necesita permisos de administrador. Desinstálalo cuando quieras desde Configuración de Windows > Aplicaciones.",
+  "skipped_title": "Programas sin copia de seguridad",
+  "skipped_intro": "Estas carpetas contienen programas o archivos de aplicaciones, así que se omiten para que la copia de seguridad sea pequeña y rápida. Tus documentos, fotos y demás archivos no se ven afectados. Si necesitas alguna de estas carpetas, vuelve a añadirla aquí.",
+  "skipped_note": "{n} carpetas de programas sin copia de seguridad. Ver la lista.",
+  "skipped_files": "{n} archivos · {sz}",
+  "btn_include_folder": "Copiar esta carpeta de todos modos",
+  "btn_exclude_folder": "Dejar de copiar",
+  "included_tag": "Con copia",
+  "included_toast": "Esta carpeta se copiará a partir de la próxima copia de seguridad."
 }
