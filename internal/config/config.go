@@ -92,6 +92,9 @@ var DefaultExcludes = []string{
 	"~$*", "*.tmp", "*.temp", "Thumbs.db", "desktop.ini", ".DS_Store",
 	"*.crdownload", "*.partial", "NTUSER.DAT*", "ntuser.dat.LOG*", "UsrClass.dat*",
 	"node_modules", "__pycache__", "vendor", ".git", ".venv",
+	// working files that apps rebuild by themselves
+	".zotero-ft-cache", ".zotero-ft-unprocessed", ".lightcraft-thumbs",
+	"catalog.lock", "ntuser.ini", "Sti_Trace.log",
 	// installers and disk images: software that can be downloaded again
 	"*.exe", "*.msi", "*.msix", "*.appx", "*.apk",
 	"*.iso", "*.img", "*.vhd", "*.vhdx", "*.dmg", "*.pkg", "*.deb", "*.rpm",
@@ -153,6 +156,8 @@ var oldDefaults = map[string]string{
 // hand is left exactly as it is.
 var OptionalExcludes = []string{
 	"/Users/*/.*", "vendor", ".git", ".venv",
+	".zotero-ft-cache", ".zotero-ft-unprocessed", ".lightcraft-thumbs",
+	"catalog.lock", "ntuser.ini", "Sti_Trace.log",
 	"*.exe", "*.msi", "*.msix", "*.appx", "*.apk",
 	"*.iso", "*.img", "*.vhd", "*.vhdx", "*.dmg", "*.pkg", "*.deb", "*.rpm",
 }
