@@ -228,6 +228,7 @@
     applyManaged();
     $("#verText").textContent = S.version;
     $("#dataDir").textContent = S.dataDir;
+    $("#logDir").textContent = S.dataDir + "\\logs";
   }
 
   // settings fixed by the organisation's setup file
