@@ -439,5 +439,7 @@
   "btn_include_folder": "Fazer cópia desta pasta mesmo assim",
   "btn_exclude_folder": "Parar de copiar",
   "included_tag": "Com cópia",
-  "included_toast": "Esta pasta será copiada a partir da próxima cópia de segurança."
+  "included_toast": "Esta pasta será copiada a partir da próxima cópia de segurança.",
+  "log_folder": "Pasta de registos:",
+  "shared_drive_warn": "Um drive partilhado pode ser aberto por todos os que têm acesso. O seu próprio O meu disco só pode ser aberto por si."
 }
